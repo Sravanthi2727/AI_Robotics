@@ -13,3 +13,4 @@ HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Deskto
 ```bash
 HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python -m navrep.scripts.cross_test_navreptrain_in_ianenv --backend VAE_LSTM --encoding V_ONLY --no-gpu --n 1
 ```
+
