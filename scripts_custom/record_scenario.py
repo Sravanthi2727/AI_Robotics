@@ -120,13 +120,20 @@ def render_scene_frame(env, scenario_name, episode_num, step_num, sim_time, stat
 
     elif is_navreptrain:
         sim = env.soadrl_sim
-        all_verts = np.array(sim.obstacle_vertices).reshape((-1, 2))
-        x_bounds = [float(all_verts[:, 0].min() - 1.0), float(all_verts[:, 0].max() + 1.0)]
-        y_bounds = [float(all_verts[:, 1].min() - 1.0), float(all_verts[:, 1].max() + 1.0)]
-        
+        flat_xs = []
+        flat_ys = []
         for poly in sim.obstacle_vertices:
             obstacle_polys.append(poly)
-            
+            for pt in poly:
+                flat_xs.append(pt[0])
+                flat_ys.append(pt[1])
+        if flat_xs:
+            x_bounds = [float(min(flat_xs) - 1.0), float(max(flat_xs) + 1.0)]
+            y_bounds = [float(min(flat_ys) - 1.0), float(max(flat_ys) + 1.0)]
+        else:
+            x_bounds = [-10.0, 10.0]
+            y_bounds = [-10.0, 10.0]
+        
         robot_pos = [sim.robot.px, sim.robot.py, sim.robot.theta]
         robot_radius = sim.robot.radius
         robot_vel = [sim.robot.vx, sim.robot.vy]

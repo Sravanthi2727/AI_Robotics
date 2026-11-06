@@ -106,6 +106,8 @@ Refer to `docs/CHANGES_LOG.md` for the audit trail.
 | `FileNotFoundError: No such file or directory: '~/navrep/models/gym'` | NavRep scripts hardcode `os.path.expanduser("~/navrep/models/gym")`. | Provided `HOME=/home/sravanthi/Desktop` (or symlinked `~/navrep -> repo`), ensuring paths resolve correctly. |
 | `AttributeError: 'Box' object has no attribute '_shape'` | PPO2 model policies were serialized with Gym 0.15.7; Gym >=0.20.0 removed `_shape` attribute. | Downgraded gym to `gym==0.15.7`. |
 | `AttributeError: module 'types' has no attribute 'CellType'` | `cloudpickle 1.2.2` accessed `types.CellType` which was introduced in Python 3.8. | Upgraded cloudpickle to `cloudpickle==1.6.0` (as specified in `requirements.txt`). |
+| `ModuleNotFoundError: No module named 'importlib.resources'` in `imageio_ffmpeg` | `importlib.resources` was added in Python 3.7; Python 3.6 uses standalone `importlib_resources`. | Dynamically shimmed `sys.modules['importlib.resources'] = importlib_resources` in video recording pipelines, allowing bundled ffmpeg to encode native H.264 MP4s. |
+| `TypeError: unsupported operand type(s) for -: 'list' and 'float'` | NumPy ragged array conversion when obstacle polygons have heterogeneous vertex counts (e.g. 8-vertex octagonal pillars vs 4-vertex kiosks) caused `reshape((-1, 2))` to return an object array of lists. | Refactored bounding box calculation in recorder and obstacle adder in custom envs to iteratively extract `(x, y)` float tuples without assuming homogeneous vertex counts. |
 
 Refer to `docs/CHALLENGES_LOG.md` for full timestamps and details.
 
@@ -154,3 +156,4 @@ Loads compatible models from `models/gym/`, loads world model from `models/V/nav
    ```
 3. **CPU Execution**:
    Always pass `--no-gpu` when executing on systems without CUDA support to prevent TensorFlow CUDA init warnings.
+
