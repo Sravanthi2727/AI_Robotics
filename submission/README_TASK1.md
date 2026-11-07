@@ -130,22 +130,31 @@ HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cros
 ```
 
 ### 3. Full Benchmark and Video Recording (Task 2 Deliverables)
-Evaluates 20 seeded episodes per scenario (seeds 100-119) under native limits (175 steps for NavRepTrainEnv, 500 steps for IANEnv), conducts 60-seed sweeps, records 22 videos with dynamic robot-following camera and telemetry HUD, and validates quality gates:
+Evaluates 20 seeded episodes per scenario (seeds 100-119) under native/calibrated limits (175 steps for NavRepTrainEnv, 500 steps for IANEnv), conducts 60-seed sweeps, records 22 videos with dynamic robot-following camera, laser points, PiP minimap, and telemetry HUD, and validates quality gates:
 ```bash
-# Parallel orchestrator across all 11 scenarios:
-HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/run_parallel_remediation.py
+# Re-record specific fixes and compile index:
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/rerecord_fixes.py
 
 # Automated quality gate verification:
 HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_videos.py
 ```
 Outputs produced:
-- `submission/task2_videos/metrics_existing.csv`: Aggregated benchmark metrics with `max_steps` column.
-- `submission/task2_videos/VIDEO_INDEX.md`: Generated strictly from sidecar JSON files.
-- `submission/task2_videos/<NN>_<scenario>_success.mp4`: True `GOAL_REACHED` episodes.
+- `submission/task2_videos/metrics_existing.csv`: Aggregated benchmark metrics with `max_steps`, `repo_script_success_pct` (numeric), `repo_script_max_steps`, and `repo_script_episodes` columns.
+- `submission/task2_videos/VIDEO_INDEX.md`: Generated strictly from sidecar JSON files in `submission/task2_videos/metadata/`.
+- `submission/task2_videos/<NN>_<scenario>_success.mp4`: True `GOAL_REACHED` episodes (with terminal distance to goal <= 1.0m).
 - `submission/task2_videos/<NN>_<scenario>_bestprogress.mp4`: Honest best-progress runs for scenarios without goal reaches.
 - `submission/task2_videos/<NN>_<scenario>_failure.mp4`: Verified honest collision or timeout runs ($\ge 30$ steps, $\ge 8.0\text{ s}$).
 
-### 4. Single Scenario Recording CLI
+Success videos come from a 60-seed sweep (seeds 0-59), benchmark rates come from seeds 100-119. Scenarios with 0% benchmark success but a success video (irosasl3, irosunity_scene_map3) reach the goal only in rare episodes.
+
+### 4. Benchmark Methodology and Discrepancies with Repo Cross-Test Script
+The benchmark results reported in `metrics_existing.csv` compare our evaluation against the ETH Zurich repository's reference script `navrep/scripts/cross_test_navreptrain_in_ianenv.py`. Differences in success rates arise from four key methodology factors:
+1. **Episode Limit (`max_steps` vs `repo_script_max_steps`)**: The repo script uses `max_episode_length = 1000` steps (200.0s) for `IANEnv` and 175 steps (35.0s) for `NavRepTrainEnv`. Our benchmark enforces a calibrated 500-step cap (100.0s) on `IANEnv` to prevent indefinite stalling while providing ample time for goal acquisition (e.g. `irosasl2` requires ~260 steps = ~52s).
+2. **Number of Episodes (`episodes` vs `repo_script_episodes`)**: The repo script runs `num_episodes = 1000` episodes, representing an aggregate asymptotic rate across broad initializations. Our benchmark evaluates 20 carefully controlled seeded episodes per scenario (seeds 100–119) for fast, 100% reproducible verification.
+3. **Deterministic Flag (`predict(deterministic=True)`)**: In both scripts, action selection uses `deterministic=True`. However, in complex multi-agent crowd environments (`PepperSim`), small trajectory divergences compound over extended horizons, leading to different episode outcomes between small 20-episode samples and 1000-episode runs.
+4. **Seed Distribution (`seeds`)**: Our benchmark strictly pins random seeds 100–119 for benchmark statistics and seeds 0–59 for the video candidate search. The repo script uses sequential unseeded episodes where environment state resets without seed pinning.
+
+### 5. Single Scenario Recording CLI
 To record an individual scenario with custom parameters:
 ```bash
 MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \

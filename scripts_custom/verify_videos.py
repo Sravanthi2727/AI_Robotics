@@ -45,7 +45,10 @@ def get_ffprobe_duration(video_path):
 
 def verify_video(video_path):
     base = os.path.basename(video_path)
-    sidecar_path = os.path.splitext(video_path)[0] + ".json"
+    metadata_dir = os.path.join(VIDEOS_DIR, "metadata")
+    sidecar_path = os.path.join(metadata_dir, base.replace(".mp4", ".json"))
+    if not os.path.exists(sidecar_path):
+        sidecar_path = os.path.splitext(video_path)[0] + ".json"
 
     if not os.path.exists(sidecar_path):
         return {
@@ -67,6 +70,12 @@ def verify_video(video_path):
                 "file": base, "outcome": outcome, "steps": steps, "final_dist": final_dist,
                 "duration": 0.0, "frozen_frames": 0, "passed": False,
                 "reason": "File named _success.mp4 but outcome is {}".format(outcome)
+            }
+        if final_dist > 1.0:
+            return {
+                "file": base, "outcome": outcome, "steps": steps, "final_dist": final_dist,
+                "duration": 0.0, "frozen_frames": 0, "passed": False,
+                "reason": "Success episode final_dist {:.2f}m > 1.0m (goal auto-reset issue)".format(final_dist)
             }
     elif base.endswith("_bestprogress.mp4"):
         if outcome not in ["COLLISION", "TIMEOUT"]:

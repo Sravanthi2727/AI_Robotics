@@ -51,7 +51,7 @@ Outputs produced:
 - `submission/task2_videos/<NN>_<scenario>_success.mp4` (only if `GOAL_REACHED`)
 - `submission/task2_videos/<NN>_<scenario>_bestprogress.mp4` (smallest final distance to goal when no success within 60 seeds)
 - `submission/task2_videos/<NN>_<scenario>_failure.mp4` (COLLISION or TIMEOUT, $\ge 30$ steps, duration $\ge 8.0\text{ s}$)
-- `submission/task2_videos/*.json` (sidecar metadata per video)
+- `submission/task2_videos/metadata/*.json` (sidecar metadata per video)
 
 ### Automated Video Verification Suite
 Validates suffix/outcome consistency, frozen frames ($\le 20$), standard deviation $\ge 15.0$ at 10/25/50/75/90%, and duration $\ge 8.0\text{ s}$ across all 22 videos:

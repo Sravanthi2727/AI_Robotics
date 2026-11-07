@@ -41,8 +41,10 @@ from scripts_custom.record_scenario import ScenarioEncodedEnv, render_scene_fram
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS_DIR = os.path.join(REPO_ROOT, "results")
 VIDEOS_DIR = os.path.join(REPO_ROOT, "submission", "task2_videos")
+METADATA_DIR = os.path.join(VIDEOS_DIR, "metadata")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(VIDEOS_DIR, exist_ok=True)
+os.makedirs(METADATA_DIR, exist_ok=True)
 
 # Ensure required asset symlinks in active HOME
 active_home = os.environ.get("HOME", os.path.expanduser("~"))
@@ -75,17 +77,17 @@ SCENARIOS = [
 ]
 
 REPO_CROSS_TEST_RESULTS = {
-    "navreptrain_train": "60.0%",
-    "navreptrain_test": "30.0%",
-    "irosasl1": "0.0%",
-    "irosasl2": "10.0%",
-    "irosasl3": "0.0%",
-    "irosasl_office_j1": "0.0%",
-    "irosasl_office_j2": "0.0%",
-    "irosasl_office_j3": "0.0%",
-    "irosunity_scene_map1": "0.0%",
-    "irosunity_scene_map2": "10.0%",
-    "irosunity_scene_map3": "0.0%",
+    "navreptrain_train": 60.0,
+    "navreptrain_test": 30.0,
+    "irosasl1": 0.0,
+    "irosasl2": 10.0,
+    "irosasl3": 0.0,
+    "irosasl_office_j1": 0.0,
+    "irosasl_office_j2": 0.0,
+    "irosasl_office_j3": 0.0,
+    "irosunity_scene_map1": 0.0,
+    "irosunity_scene_map2": 10.0,
+    "irosunity_scene_map3": 0.0,
 }
 
 
@@ -309,7 +311,7 @@ def record_verified_video(prefix, scenario_name, role, seed, policy, encoder, ma
     """
     out_name = "{}_{}_{}.mp4".format(prefix, scenario_name, role)
     out_path = os.path.join(VIDEOS_DIR, out_name)
-    sidecar_path = os.path.join(VIDEOS_DIR, "{}_{}_{}.json".format(prefix, scenario_name, role))
+    sidecar_path = os.path.join(METADATA_DIR, "{}_{}_{}.json".format(prefix, scenario_name, role))
 
     print("\n[RECORD] -> Recording {} (Seed {}, Role={})".format(out_name, seed, role))
 
@@ -354,7 +356,16 @@ def record_verified_video(prefix, scenario_name, role, seed, policy, encoder, ma
     )
     writer.append_data(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
+    target_goal = None
+    cur_pos = start_pos[:]
+
     while not done and step < max_steps:
+        if is_navrep:
+            target_goal = [float(env.soadrl_sim.robot.gx), float(env.soadrl_sim.robot.gy)]
+        else:
+            rlenv = env.iarlenv.rlenv
+            target_goal = [float(rlenv.agent_goals[0][0]), float(rlenv.agent_goals[0][1])]
+
         action, _ = policy.model.predict(ob, deterministic=True)
         ob, reward, done, info = env.step(action)
         step += 1
@@ -389,10 +400,12 @@ def record_verified_video(prefix, scenario_name, role, seed, policy, encoder, ma
 
         robot_trail.append(cur_pos)
 
+        frame_goal_override = target_goal if status == "GOAL REACHED" else None
         frame = render_scene_frame(
             env=env, scenario_name=scenario_name, episode_num=1, step_num=step,
             sim_time=sim_time, status=status, robot_trail=robot_trail,
-            start_pos=start_pos, policy_name="VAE_LSTM_VM", latest_obs=latest_obs
+            start_pos=start_pos, policy_name="VAE_LSTM_VM", latest_obs=latest_obs,
+            goal_override=frame_goal_override
         )
         writer.append_data(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
@@ -404,12 +417,15 @@ def record_verified_video(prefix, scenario_name, role, seed, policy, encoder, ma
 
     writer.close()
 
-    if is_navrep:
-        final_dist = math.hypot(env.soadrl_sim.robot.px - env.soadrl_sim.robot.gx,
-                                env.soadrl_sim.robot.py - env.soadrl_sim.robot.gy)
+    if status == "GOAL REACHED" and target_goal is not None:
+        final_dist = math.hypot(cur_pos[0] - target_goal[0], cur_pos[1] - target_goal[1])
     else:
-        final_dist = math.hypot(rlenv.virtual_peppers[0].pos[0] - rlenv.agent_goals[0][0],
-                                rlenv.virtual_peppers[0].pos[1] - rlenv.agent_goals[0][1])
+        if is_navrep:
+            final_dist = math.hypot(env.soadrl_sim.robot.px - env.soadrl_sim.robot.gx,
+                                    env.soadrl_sim.robot.py - env.soadrl_sim.robot.gy)
+        else:
+            final_dist = math.hypot(rlenv.virtual_peppers[0].pos[0] - rlenv.agent_goals[0][0],
+                                    rlenv.virtual_peppers[0].pos[1] - rlenv.agent_goals[0][1])
 
     env.close()
 
@@ -450,6 +466,10 @@ def compile_all_deliverables(model_filename):
         if os.path.exists(res_file):
             with open(res_file, "r") as f:
                 b = json.load(f)
+            raw_repo_succ = b.get("repo_script_success_pct", REPO_CROSS_TEST_RESULTS.get(scenario_name, 0.0))
+            if isinstance(raw_repo_succ, str):
+                raw_repo_succ = float(raw_repo_succ.replace("%", "").strip())
+            repo_max = 175 if scenario_name.startswith("navreptrain") else 1000
             csv_rows.append({
                 "scenario": b["scenario"],
                 "env_class": b["env_class"],
@@ -463,15 +483,19 @@ def compile_all_deliverables(model_filename):
                 "collision_pct": b["collision_pct"],
                 "timeout_pct": b["timeout_pct"],
                 "mean_ttg_s": b["mean_ttg_s"],
-                "repo_script_success_pct": b.get("repo_script_success_pct", "0.0%")
+                "repo_script_success_pct": raw_repo_succ,
+                "repo_script_max_steps": repo_max,
+                "repo_script_episodes": 1000
             })
     df_metrics = pd.DataFrame(csv_rows)
     metrics_csv_path = os.path.join(VIDEOS_DIR, "metrics_existing.csv")
     df_metrics.to_csv(metrics_csv_path, index=False)
     print("\n[METRICS] Saved updated metrics to: {}".format(metrics_csv_path))
 
-    # Compile VIDEO_INDEX.md from sidecars
-    sidecars = sorted(glob.glob(os.path.join(VIDEOS_DIR, "*.json")))
+    # Compile VIDEO_INDEX.md from sidecars in METADATA_DIR
+    sidecars = sorted(glob.glob(os.path.join(METADATA_DIR, "*.json")))
+    if not sidecars:
+        sidecars = sorted(glob.glob(os.path.join(VIDEOS_DIR, "*.json")))
     all_video_sidecars = []
     for sc in sidecars:
         with open(sc, "r") as f:

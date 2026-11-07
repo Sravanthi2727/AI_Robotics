@@ -68,7 +68,8 @@ def transform_world_to_canvas(x, y, x_bounds, y_bounds, canvas_w=640, canvas_h=6
 
 def render_scene_frame(env, scenario_name, episode_num, step_num, sim_time, status,
                        robot_trail, start_pos, policy_name="VAE_LSTM_VM",
-                       canvas_w=640, canvas_h=640, latest_obs=None):
+                       canvas_w=640, canvas_h=640, latest_obs=None,
+                       goal_override=None):
     """Draws a complete vector visualization frame with robot-centric camera, PiP minimap, and HUD overlay."""
     frame = np.full((canvas_h, canvas_w, 3), (25, 29, 36), dtype=np.uint8)  # dark slate background
 
@@ -95,7 +96,10 @@ def render_scene_frame(env, scenario_name, episode_num, step_num, sim_time, stat
                      float(rlenv.virtual_peppers[0].pos[1]),
                      float(rlenv.virtual_peppers[0].pos[2])]
         robot_radius = float(rlenv.vp_radii[0])
-        goal_pos = [float(rlenv.agent_goals[0][0]), float(rlenv.agent_goals[0][1])]
+        if goal_override is not None:
+            goal_pos = [float(goal_override[0]), float(goal_override[1])]
+        else:
+            goal_pos = [float(rlenv.agent_goals[0][0]), float(rlenv.agent_goals[0][1])]
 
         # Dynamic 20m x 20m camera centered on robot
         cam_span = 20.0
@@ -123,7 +127,10 @@ def render_scene_frame(env, scenario_name, episode_num, step_num, sim_time, stat
         sim = env.soadrl_sim
         robot_pos = [float(sim.robot.px), float(sim.robot.py), float(sim.robot.theta)]
         robot_radius = float(sim.robot.radius)
-        goal_pos = [float(sim.robot.gx), float(sim.robot.gy)]
+        if goal_override is not None:
+            goal_pos = [float(goal_override[0]), float(goal_override[1])]
+        else:
+            goal_pos = [float(sim.robot.gx), float(sim.robot.gy)]
 
         # Bounds from arena
         flat_xs, flat_ys = [], []
@@ -475,8 +482,10 @@ def record_scenario(scenario_name, policy_path=None, episodes=1, seed=42, fps=12
         )
         writer.append_data(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
+        target_goal = None
         while not done and step < max_steps:
             if is_navreptrain:
+                target_goal = [float(env.soadrl_sim.robot.gx), float(env.soadrl_sim.robot.gy)]
                 action, _ = policy.model.predict(ob, deterministic=deterministic)
                 ob, reward, done, info = env.step(action)
                 event = info.get('event', None)
@@ -492,9 +501,10 @@ def record_scenario(scenario_name, policy_path=None, episodes=1, seed=42, fps=12
                     done = True
                 latest_obs = [ob]
             else:
+                rlenv = env.iarlenv.rlenv
+                target_goal = [float(rlenv.agent_goals[0][0]), float(rlenv.agent_goals[0][1])]
                 action, _ = policy.model.predict(ob, deterministic=deterministic)
                 ob, reward, done, info = env.step(action)
-                rlenv = env.iarlenv.rlenv
                 cur_pos = [float(rlenv.virtual_peppers[0].pos[0]), float(rlenv.virtual_peppers[0].pos[1])]
                 if info.get('goal_reached', False):
                     status = "GOAL REACHED"
@@ -511,6 +521,7 @@ def record_scenario(scenario_name, policy_path=None, episodes=1, seed=42, fps=12
             sim_time += dt
             step += 1
 
+            frame_goal_override = target_goal if status == "GOAL REACHED" else None
             frame = render_scene_frame(
                 env=env,
                 scenario_name=scenario_name,
@@ -521,7 +532,8 @@ def record_scenario(scenario_name, policy_path=None, episodes=1, seed=42, fps=12
                 robot_trail=robot_trail,
                 start_pos=start_pos,
                 policy_name=policy_label,
-                latest_obs=latest_obs
+                latest_obs=latest_obs,
+                goal_override=frame_goal_override
             )
             writer.append_data(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
@@ -530,6 +542,7 @@ def record_scenario(scenario_name, policy_path=None, episodes=1, seed=42, fps=12
 
         # Ensure video is at least 8.0s (96 frames at 12 fps) for failure/timeout
         # or pad with 1.5s hold frame for success
+        final_frame_goal_override = target_goal if status == "GOAL REACHED" else None
         final_frame = render_scene_frame(
             env=env,
             scenario_name=scenario_name,
@@ -540,7 +553,8 @@ def record_scenario(scenario_name, policy_path=None, episodes=1, seed=42, fps=12
             robot_trail=robot_trail,
             start_pos=start_pos,
             policy_name=policy_label,
-            latest_obs=latest_obs
+            latest_obs=latest_obs,
+            goal_override=final_frame_goal_override
         )
         final_rgb = cv2.cvtColor(final_frame, cv2.COLOR_BGR2RGB)
         pad_frames = int(effective_fps * 1.5)
