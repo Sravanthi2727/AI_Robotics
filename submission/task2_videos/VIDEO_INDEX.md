@@ -1,6 +1,12 @@
 # Task 2 Video Index: ETH NavRep Scenarios Benchmark
 
-All videos were generated from exhaustive 60-seed sweeps. Files ending in `_success.mp4` represent true `GOAL_REACHED` episodes; scenarios where the policy could not reach the goal within 60 seeds are honestly labeled `_bestprogress.mp4` (selected by smallest final distance to goal). Every video includes the dynamic 20m x 20m camera, top telemetry HUD, laser points, and PiP minimap, with frozen frames strictly bounded (<= 12 frames).
+### Evaluation & Demonstration Methodology
+- **Benchmark Evaluation (Statistical Metrics)**: Evaluates **20 seeded episodes per scenario (seeds 100–119)** under native/documented step limits (175 steps for `NavRepTrainEnv`, 500 steps for `IANEnv`) to produce the unbiased success rates reported in `metrics_existing.csv`.
+- **Demonstration Video Search (Qualitative Evidence)**: Conducts a separate, exhaustive **60-seed sweep (seeds 0–59)** to find representative visual demonstrations.
+- **Seed Sweep Distinction**: A scenario with an aggregate benchmark success rate of **0.0%** across seeds 100–119 can still yield a verified `_success.mp4` demonstration if the policy safely reached the goal on an isolated seed during the 60-seed search (e.g., `seed 56` for `irosasl3` and `seed 34` for `irosunity_scene_map3`).
+- **Honest Labeling**: Files ending in `_success.mp4` represent true `GOAL_REACHED` episodes (final distance $\le 1.0\text{m}$). Scenarios where the policy could not reach the goal on any of the 60 candidate seeds are honestly labeled `_bestprogress.mp4` (selected by smallest final Euclidean distance to goal). Every video includes the dynamic 20m x 20m camera, top telemetry HUD, laser scan points, and PiP minimap, with static freeze frames strictly bounded ($\le 12$ frames).
+
+---
 
 | File | Scenario | Outcome | Seed | Steps | Sim Time | Final Distance | Duration |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |

@@ -6,77 +6,140 @@ This document records the exact reproducible commands for all environment setups
 
 ## 1. Environment Setup & Smoke Testing (Task 1)
 
-### Automated Setup Script
-Run once from the repository root to create the Python 3.6 environment, compile ASL robotics packages, and establish asset links:
+### Option A: Standard Docker Workflow (Recommended for Cross-Platform Execution)
+All team members (macOS, Windows, Linux) can run the pre-configured container without installing local Python 3.6:
 ```bash
+# Start desktop container in background on port 6080
+docker compose up -d
+
+# Minimal verification smoke test (50 random steps on NavRepTrainEnv and IANEnv)
+docker exec navrep_desktop python scripts_custom/smoke_test.py
+
+# Pretrained model and checkpoint MD5 verification
+docker exec navrep_desktop python scripts_custom/verify_models_and_checksums.py
+```
+*(Interactive desktop is accessible via browser at `http://localhost:6080/vnc.html`)*
+
+### Option B: Native Standalone Setup Script
+```bash
+# Clone and enter repository
 cd "$REPO_ROOT"
 bash setup_env.sh
-```
 
-### Minimal Verification Smoke Test (Random Actions, 50 Steps)
-Runs 50 steps on both `NavRepTrainEnv` and `IANEnv`:
-```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/smoke_test.py
-```
+# Run smoke test in native virtualenv
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/smoke_test.py
 
-### Pretrained Model Verification & Checksums
-Validates file sizes, MD5 checksums, and weights for all 10 pretrained models:
-```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_models_and_checksums.py
-```
-
-### Pretrained Policy Cross-Testing in IANEnv (Repo Native Script)
-Runs the upstream cross-testing script on compatible PPO models:
-```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cross_test_navreptrain_in_ianenv.py \
-    --backend VAE_LSTM --encoding VM --no-gpu --dry-run --n 11
+# Verify models and checksums
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_models_and_checksums.py
 ```
 
 ---
 
 ## 2. Existing Scenarios Benchmark and Video Recordings (Task 2)
 
-### Full Batch Benchmark, Sweep, and Video Suite (11 Scenarios)
-Evaluates 20 seeded episodes per scenario (seeds 100-119) under native/documented episode limits (175 steps for NavRepTrainEnv, 500 steps for IANEnv), conducts 60-seed sweeps for verified seed selection, records 640x640 H.264 MP4 videos with dynamic 20m x 20m robot-following camera, laser scans, and PiP minimap, and enforces programmatic quality gates:
-```bash
-# Parallel orchestrator (3 concurrent workers):
-HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/run_parallel_remediation.py
+### 2.1 Fast Verification & Table Reproduction (Reproduces Existing Results)
+*These commands run instantaneously and do NOT perform long simulation rollouts.*
 
-# Or single-scenario CLI:
-HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/remediate_and_record.py --scenario navreptrain_train
-```
-Outputs produced:
-- `submission/task2_videos/metrics_existing.csv`
-- `submission/task2_videos/VIDEO_INDEX.md`
-- `submission/task2_videos/<NN>_<scenario>_success.mp4` (only if `GOAL_REACHED`)
-- `submission/task2_videos/<NN>_<scenario>_bestprogress.mp4` (smallest final distance to goal when no success within 60 seeds)
-- `submission/task2_videos/<NN>_<scenario>_failure.mp4` (COLLISION or TIMEOUT, $\ge 30$ steps, duration $\ge 8.0\text{ s}$)
-- `submission/task2_videos/metadata/*.json` (sidecar metadata per video)
-
-### Automated Video Verification Suite
+#### A. Automated Video Quality Verification Suite
 Validates suffix/outcome consistency, frozen frames ($\le 20$), standard deviation $\ge 15.0$ at 10/25/50/75/90%, and duration $\ge 8.0\text{ s}$ across all 22 videos:
-```bash
-HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_videos.py
-```
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python scripts_custom/verify_videos.py
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_videos.py
+  ```
 
-### Individual Scenario Video Recording CLI
-Records an individual scenario episode with custom seed, backend, and camera overlay:
-```bash
-# Example 1: irosasl1
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
-    --scenario irosasl1 --seed 42 --backend VAE_LSTM --encoding VM --fps 12 \
-    --out submission/task2_videos/03_irosasl1_test.mp4
+#### B. Pretrained Model Verification & Checksums
+Validates file sizes, MD5 checksums, and weights for all 10 pretrained models:
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python scripts_custom/verify_models_and_checksums.py
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_models_and_checksums.py
+  ```
 
-# Example 2: navreptrain_train
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
-    --scenario navreptrain_train --seed 1 --backend VAE_LSTM --encoding VM --fps 12 \
-    --out submission/task2_videos/01_navreptrain_train_test.mp4
+#### C. Cross-Test Baseline Parser
+Parses upstream evaluation pickle files and outputs `results/repo_script_cross_test.json`:
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python scripts_custom/log_repo_cross_test.py
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/log_repo_cross_test.py
+  ```
 
-# Example 3: irosunity_scene_map1
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
-    --scenario irosunity_scene_map1 --seed 14 --backend VAE_LSTM --encoding VM --fps 12 \
-    --out submission/task2_videos/09_irosunity_scene_map1_test.mp4
-```
+#### D. Fast Metric & Video Index Re-Compilation
+Re-compiles `submission/task2_videos/metrics_existing.csv` and `VIDEO_INDEX.md` directly from existing sidecars and per-scenario JSON files without re-running simulations:
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python scripts_custom/remediate_and_record.py --compile-only
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/remediate_and_record.py --compile-only
+  ```
+
+---
+
+### 2.2 Full Simulation & Recording Suite (Generates New Recordings)
+*WARNING: These commands run multi-seed simulations and video rendering. Do NOT run unless re-recording is required.*
+
+#### A. Single Scenario 20-Episode Benchmark & 60-Seed Sweep Recording
+Evaluates 20 seeded episodes (seeds 100–119), runs a 60-seed sweep (seeds 0–59), and records success/best-progress and failure MP4 videos:
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python scripts_custom/remediate_and_record.py --scenario navreptrain_train
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/remediate_and_record.py --scenario navreptrain_train
+  ```
+
+#### B. Parallel Orchestrator (All 11 Scenarios)
+Runs 3 concurrent worker processes across all 11 scenarios:
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python scripts_custom/dev/run_parallel_remediation.py
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/dev/run_parallel_remediation.py
+  ```
+
+#### C. Individual Scenario Custom Video Recording CLI
+Records an individual episode with custom seed, camera overlay, and output path:
+* **Docker**:
+  ```bash
+  # Example: irosasl1
+  docker exec navrep_desktop python scripts_custom/record_scenario.py \
+      --scenario irosasl1 --seed 42 --backend VAE_LSTM --encoding VM --fps 12 \
+      --out submission/task2_videos/03_irosasl1_test.mp4
+  ```
+* **Native**:
+  ```bash
+  # Example: irosasl1
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
+      --scenario irosasl1 --seed 42 --backend VAE_LSTM --encoding VM --fps 12 \
+      --out submission/task2_videos/03_irosasl1_test.mp4
+  ```
+
+#### D. Upstream Policy Cross-Testing in IANEnv (ETH Zurich Reference Script)
+Runs the upstream cross-testing script on compatible PPO models:
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python -m navrep.scripts.cross_test_navreptrain_in_ianenv \
+      --backend VAE_LSTM --encoding VM --no-gpu --n 20
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep.scripts.cross_test_navreptrain_in_ianenv \
+      --backend VAE_LSTM --encoding VM --no-gpu --n 20
+  ```
 
 ---
 
@@ -84,31 +147,48 @@ MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py 
 
 ### Unit Test Suite Execution
 Runs test cases verifying registry loading, custom environment instantiation, step/reset cycles, and observation/action space alignment across all 6 custom scenarios:
-```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m unittest tests/test_custom_scenarios.py
-```
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python -m unittest tests/test_custom_scenarios.py
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m unittest tests/test_custom_scenarios.py
+  ```
 
 ### Full Batch Custom Evaluation, Recording & Density Analysis Suite
 Evaluates 20 seeded episodes per scenario/difficulty combination, records MP4 videos to `submission/task3_custom/videos/`, outputs `submission/task3_custom/metrics_custom.csv`, and executes the parametric crowd density stress test sweep generating `submission/task3_custom/analysis/density_vs_success.png`:
-```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/evaluate_and_record_custom.py
-```
+* **Docker**:
+  ```bash
+  docker exec navrep_desktop python scripts_custom/evaluate_and_record_custom.py
+  ```
+* **Native**:
+  ```bash
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/evaluate_and_record_custom.py
+  ```
 
 ### Custom Scenario CLI (`navrep_custom.run_custom`)
-```bash
-# Run interactive benchmark evaluation:
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
-    --scenario mallmate --difficulty MEDIUM --episodes 5
+* **Docker**:
+  ```bash
+  # Run interactive benchmark evaluation:
+  docker exec navrep_desktop python -m navrep_custom.run_custom \
+      --scenario mallmate --difficulty MEDIUM --episodes 5
 
-# Record video:
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
-    --scenario mallmate --difficulty MEDIUM --episodes 2 --record submission/task3_custom/videos/01_mallmate_medium.mp4
+  # Record video:
+  docker exec navrep_desktop python -m navrep_custom.run_custom \
+      --scenario mallmate --difficulty MEDIUM --episodes 2 --record submission/task3_custom/videos/01_mallmate_medium.mp4
 
-# Export 2D blueprint map preview:
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
-    --scenario mallmate --export-map submission/task3_custom/maps/mallmate.png
+  # Export 2D blueprint map preview:
+  docker exec navrep_desktop python -m navrep_custom.run_custom \
+      --scenario mallmate --export-map submission/task3_custom/maps/mallmate.png
 
-# Parametric crowd density sweep:
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
-    --density-sweep diwalibazaar --out-plot submission/task3_custom/analysis/density_vs_success.png
-```
+  # Parametric crowd density sweep:
+  docker exec navrep_desktop python -m navrep_custom.run_custom \
+      --density-sweep diwalibazaar --out-plot submission/task3_custom/analysis/density_vs_success.png
+  ```
+* **Native**:
+  ```bash
+  # Run interactive benchmark evaluation:
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
+      --scenario mallmate --difficulty MEDIUM --episodes 5
+  ```
