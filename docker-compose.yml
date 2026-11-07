@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  navrep:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: navrep-svnit:latest
+    container_name: navrep_desktop
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - "6080:6080"
+      - "5900:5900"
+    volumes:
+      # Mount repository root directly to /workspace
+      - .:/workspace
+    environment:
+      - DISPLAY=:99
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - QT_X11_NO_MITSHM=1
+      - MESA_GL_VERSION_OVERRIDE=3.3
+      - MPLCONFIGDIR=/tmp/matplotlib
+      - HOME=/root
+      - PATH=/opt/env/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - PYTHONPATH=/workspace:/workspace/external
+      - SHELL=/bin/bash
+      - DEBIAN_FRONTEND=noninteractive
+    shm_size: '2gb'
+    stdin_open: true
+    tty: true

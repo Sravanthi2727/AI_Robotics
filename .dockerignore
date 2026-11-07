@@ -1,0 +1,19 @@
+.git
+.gitignore
+.DS_Store
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+build/
+dist/
+*.egg-info/
+env/
+pepper3venv/
+bin/micromamba
+
+# Exclude generated video recordings and large ZIP archives from build context
+submission/task2_videos/*.mp4
+submission/task3_custom/videos/*.mp4
+submission/navrep_modified_source.zip
