@@ -1,0 +1,1589 @@
+{
+  "metadata": {
+    "script": "navrep/scripts/cross_test_navreptrain_in_ianenv.py",
+    "flags": "--backend VAE_LSTM --encoding VM --n 20 and --backend VAE_LSTM --encoding V_ONLY --n 20",
+    "episodes_per_run": 20,
+    "ianenv_code_max_steps": 1000,
+    "navreptrain_code_max_steps": 175,
+    "benchmark_model_file": "navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_in_ianenv_x20.pckl"
+  },
+  "per_scenario_benchmark_model": {
+    "navreptrain_train": {
+      "repo_script_success_pct": "N/A",
+      "repo_script_max_steps": "N/A",
+      "repo_script_episodes": "N/A",
+      "measured": false,
+      "note": "NavRepTrainEnv scenarios are not supported or evaluated by cross_test_navreptrain_in_ianenv.py"
+    },
+    "navreptrain_test": {
+      "repo_script_success_pct": "N/A",
+      "repo_script_max_steps": "N/A",
+      "repo_script_episodes": "N/A",
+      "measured": false,
+      "note": "NavRepTrainEnv scenarios are not supported or evaluated by cross_test_navreptrain_in_ianenv.py"
+    },
+    "irosasl1": {
+      "repo_script_success_pct": "N/A",
+      "repo_script_max_steps": "N/A",
+      "repo_script_episodes": "N/A",
+      "measured": false,
+      "note": "Scenario was not randomly sampled in this 20-episode cross-test rollout"
+    },
+    "irosasl2": {
+      "repo_script_success_pct": "N/A",
+      "repo_script_max_steps": "N/A",
+      "repo_script_episodes": "N/A",
+      "measured": false,
+      "note": "Scenario was not randomly sampled in this 20-episode cross-test rollout"
+    },
+    "irosasl3": {
+      "repo_script_success_pct": 0.0,
+      "repo_script_max_steps": 1000,
+      "repo_script_episodes": 1,
+      "measured": true,
+      "note": "Measured in 20-episode cross-test run of model 2020_09_23"
+    },
+    "irosasl_office_j1": {
+      "repo_script_success_pct": 0.0,
+      "repo_script_max_steps": 1000,
+      "repo_script_episodes": 2,
+      "measured": true,
+      "note": "Measured in 20-episode cross-test run of model 2020_09_23"
+    },
+    "irosasl_office_j2": {
+      "repo_script_success_pct": "N/A",
+      "repo_script_max_steps": "N/A",
+      "repo_script_episodes": "N/A",
+      "measured": false,
+      "note": "Scenario was not randomly sampled in this 20-episode cross-test rollout"
+    },
+    "irosasl_office_j3": {
+      "repo_script_success_pct": 0.0,
+      "repo_script_max_steps": 1000,
+      "repo_script_episodes": 2,
+      "measured": true,
+      "note": "Measured in 20-episode cross-test run of model 2020_09_23"
+    },
+    "irosunity_scene_map1": {
+      "repo_script_success_pct": "N/A",
+      "repo_script_max_steps": "N/A",
+      "repo_script_episodes": "N/A",
+      "measured": false,
+      "note": "Scenario was not randomly sampled in this 20-episode cross-test rollout"
+    },
+    "irosunity_scene_map2": {
+      "repo_script_success_pct": "N/A",
+      "repo_script_max_steps": "N/A",
+      "repo_script_episodes": "N/A",
+      "measured": false,
+      "note": "Scenario was not randomly sampled in this 20-episode cross-test rollout"
+    },
+    "irosunity_scene_map3": {
+      "repo_script_success_pct": 0.0,
+      "repo_script_max_steps": 1000,
+      "repo_script_episodes": 1,
+      "measured": true,
+      "note": "Measured in 20-episode cross-test run of model 2020_09_23"
+    }
+  },
+  "all_models_evaluated": {
+    "navreptrainencodedenv_2020_09_17__09_15_17_PPO_VAE_LSTM_V_ONLY_V32M512_in_ianenv_x20.pckl": {
+      "file": "navreptrainencodedenv_2020_09_17__09_15_17_PPO_VAE_LSTM_V_ONLY_V32M512_in_ianenv_x20.pckl",
+      "total_episodes": 20,
+      "overall_success_pct": 30.0,
+      "scenarios": {
+        "irosasl1": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 58,
+          "steps_mean": 58.0,
+          "episodes_detail": [
+            {
+              "steps": 58,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl2": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 1000.0,
+          "episodes_detail": [
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl4": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 77,
+          "steps_mean": 77.0,
+          "episodes_detail": [
+            {
+              "steps": 77,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j1": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 49,
+          "steps_mean": 49.0,
+          "episodes_detail": [
+            {
+              "steps": 49,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j2": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 1000.0,
+          "episodes_detail": [
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl_office_j3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 72,
+          "steps_mean": 72.0,
+          "episodes_detail": [
+            {
+              "steps": 72,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j4": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 57,
+          "steps_mean": 57.0,
+          "episodes_detail": [
+            {
+              "steps": 57,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j5": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 89,
+          "steps_mean": 89.0,
+          "episodes_detail": [
+            {
+              "steps": 89,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j6": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 512.0,
+          "episodes_detail": [
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            },
+            {
+              "steps": 24,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 60,
+          "steps_mean": 60.0,
+          "episodes_detail": [
+            {
+              "steps": 60,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map4": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 63,
+          "steps_mean": 63.0,
+          "episodes_detail": [
+            {
+              "steps": 63,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map5": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 126,
+          "steps_mean": 126.0,
+          "episodes_detail": [
+            {
+              "steps": 126,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map6": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 215,
+          "steps_mean": 215.0,
+          "episodes_detail": [
+            {
+              "steps": 215,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl_office_j1": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 29,
+          "steps_mean": 29.0,
+          "episodes_detail": [
+            {
+              "steps": 29,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl_office_j2": {
+          "episodes": 2,
+          "success_pct": 100.0,
+          "steps_max": 45,
+          "steps_mean": 43.5,
+          "episodes_detail": [
+            {
+              "steps": 42,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 45,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlunity_scene_map1": {
+          "episodes": 2,
+          "success_pct": 100.0,
+          "steps_max": 39,
+          "steps_mean": 37.5,
+          "episodes_detail": [
+            {
+              "steps": 36,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 39,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlunity_scene_map2": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 59,
+          "steps_mean": 59.0,
+          "episodes_detail": [
+            {
+              "steps": 59,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        }
+      }
+    },
+    "navreptrainencodedenv_2020_09_17__16_29_24_PPO_VAE_LSTM_VM_V32M512_in_ianenv_x20.pckl": {
+      "file": "navreptrainencodedenv_2020_09_17__16_29_24_PPO_VAE_LSTM_VM_V32M512_in_ianenv_x20.pckl",
+      "total_episodes": 20,
+      "overall_success_pct": 30.0,
+      "scenarios": {
+        "irosasl2": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 1000.0,
+          "episodes_detail": [
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            },
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 243,
+          "steps_mean": 243.0,
+          "episodes_detail": [
+            {
+              "steps": 243,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl4": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 27,
+          "steps_mean": 27.0,
+          "episodes_detail": [
+            {
+              "steps": 27,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl6": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 269,
+          "steps_mean": 269.0,
+          "episodes_detail": [
+            {
+              "steps": 269,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j1": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 125,
+          "steps_mean": 125.0,
+          "episodes_detail": [
+            {
+              "steps": 125,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j5": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 757,
+          "steps_mean": 757.0,
+          "episodes_detail": [
+            {
+              "steps": 757,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j6": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 51,
+          "steps_mean": 51.0,
+          "episodes_detail": [
+            {
+              "steps": 51,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map1": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 62,
+          "steps_mean": 62.0,
+          "episodes_detail": [
+            {
+              "steps": 62,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map2": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 411,
+          "steps_mean": 411.0,
+          "episodes_detail": [
+            {
+              "steps": 411,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosunity_scene_map4": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 57,
+          "steps_mean": 57.0,
+          "episodes_detail": [
+            {
+              "steps": 57,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map5": {
+          "episodes": 2,
+          "success_pct": 50.0,
+          "steps_max": 284,
+          "steps_mean": 283.0,
+          "episodes_detail": [
+            {
+              "steps": 284,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 282,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl1": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 39,
+          "steps_mean": 39.0,
+          "episodes_detail": [
+            {
+              "steps": 39,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 20,
+          "steps_mean": 20.0,
+          "episodes_detail": [
+            {
+              "steps": 20,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl_office_j3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 19,
+          "steps_mean": 19.0,
+          "episodes_detail": [
+            {
+              "steps": 19,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlunity_scene_map1": {
+          "episodes": 2,
+          "success_pct": 100.0,
+          "steps_max": 43,
+          "steps_mean": 41.0,
+          "episodes_detail": [
+            {
+              "steps": 39,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 43,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlunity_scene_map2": {
+          "episodes": 2,
+          "success_pct": 50.0,
+          "steps_max": 63,
+          "steps_mean": 44.0,
+          "episodes_detail": [
+            {
+              "steps": 63,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 25,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        }
+      }
+    },
+    "navreptrainencodedenv_2020_09_19__13_27_16_PPO_VAE_LSTM_V_ONLY_V32M512_in_ianenv_x20.pckl": {
+      "file": "navreptrainencodedenv_2020_09_19__13_27_16_PPO_VAE_LSTM_V_ONLY_V32M512_in_ianenv_x20.pckl",
+      "total_episodes": 20,
+      "overall_success_pct": 50.0,
+      "scenarios": {
+        "irosasl1": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 35,
+          "steps_mean": 35.0,
+          "episodes_detail": [
+            {
+              "steps": 35,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl2": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 1000.0,
+          "episodes_detail": [
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl3": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 79,
+          "steps_mean": 77.0,
+          "episodes_detail": [
+            {
+              "steps": 75,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 79,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j1": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 35,
+          "steps_mean": 35.0,
+          "episodes_detail": [
+            {
+              "steps": 35,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j2": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 1000.0,
+          "episodes_detail": [
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl_office_j6": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 503,
+          "steps_mean": 503.0,
+          "episodes_detail": [
+            {
+              "steps": 503,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosunity_scene_map2": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 297,
+          "steps_mean": 297.0,
+          "episodes_detail": [
+            {
+              "steps": 297,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosunity_scene_map3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 66,
+          "steps_mean": 66.0,
+          "episodes_detail": [
+            {
+              "steps": 66,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map4": {
+          "episodes": 2,
+          "success_pct": 50.0,
+          "steps_max": 155,
+          "steps_mean": 104.0,
+          "episodes_detail": [
+            {
+              "steps": 155,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 53,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map5": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 148,
+          "steps_mean": 148.0,
+          "episodes_detail": [
+            {
+              "steps": 148,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl_office_j1": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 21,
+          "steps_mean": 21.0,
+          "episodes_detail": [
+            {
+              "steps": 21,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl_office_j2": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 42,
+          "steps_mean": 42.0,
+          "episodes_detail": [
+            {
+              "steps": 42,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl_office_j3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 20,
+          "steps_mean": 20.0,
+          "episodes_detail": [
+            {
+              "steps": 20,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlunity_scene_map1": {
+          "episodes": 2,
+          "success_pct": 100.0,
+          "steps_max": 42,
+          "steps_mean": 38.5,
+          "episodes_detail": [
+            {
+              "steps": 35,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 42,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlunity_scene_map2": {
+          "episodes": 3,
+          "success_pct": 100.0,
+          "steps_max": 52,
+          "steps_mean": 49.0,
+          "episodes_detail": [
+            {
+              "steps": 46,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 49,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 52,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        }
+      }
+    },
+    "navreptrainencodedenv_2020_09_20__10_11_55_PPO_VAE_LSTM_VM_V32M512_in_ianenv_x20.pckl": {
+      "file": "navreptrainencodedenv_2020_09_20__10_11_55_PPO_VAE_LSTM_VM_V32M512_in_ianenv_x20.pckl",
+      "total_episodes": 20,
+      "overall_success_pct": 40.0,
+      "scenarios": {
+        "irosasl1": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 55,
+          "steps_mean": 47.5,
+          "episodes_detail": [
+            {
+              "steps": 40,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 55,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl5": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 32,
+          "steps_mean": 32.0,
+          "episodes_detail": [
+            {
+              "steps": 32,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j1": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 41,
+          "steps_mean": 41.0,
+          "episodes_detail": [
+            {
+              "steps": 41,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j2": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 55,
+          "steps_mean": 55.0,
+          "episodes_detail": [
+            {
+              "steps": 55,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j5": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 191,
+          "steps_mean": 191.0,
+          "episodes_detail": [
+            {
+              "steps": 191,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j6": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 599,
+          "steps_mean": 599.0,
+          "episodes_detail": [
+            {
+              "steps": 599,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map2": {
+          "episodes": 2,
+          "success_pct": 100.0,
+          "steps_max": 300,
+          "steps_mean": 293.5,
+          "episodes_detail": [
+            {
+              "steps": 300,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 287,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosunity_scene_map3": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 73,
+          "steps_mean": 65.5,
+          "episodes_detail": [
+            {
+              "steps": 58,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 73,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map4": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 89,
+          "steps_mean": 89.0,
+          "episodes_detail": [
+            {
+              "steps": 89,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map6": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 71,
+          "steps_mean": 71.0,
+          "episodes_detail": [
+            {
+              "steps": 71,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl1": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 40,
+          "steps_mean": 40.0,
+          "episodes_detail": [
+            {
+              "steps": 40,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 19,
+          "steps_mean": 19.0,
+          "episodes_detail": [
+            {
+              "steps": 19,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl_office_j1": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 29,
+          "steps_mean": 29.0,
+          "episodes_detail": [
+            {
+              "steps": 29,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl_office_j2": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 40,
+          "steps_mean": 40.0,
+          "episodes_detail": [
+            {
+              "steps": 40,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlunity_scene_map1": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 34,
+          "steps_mean": 34.0,
+          "episodes_detail": [
+            {
+              "steps": 34,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlunity_scene_map2": {
+          "episodes": 2,
+          "success_pct": 100.0,
+          "steps_max": 67,
+          "steps_mean": 57.5,
+          "episodes_detail": [
+            {
+              "steps": 48,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 67,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        }
+      }
+    },
+    "navreptrainencodedenv_2020_09_22__01_14_06_PPO_VAE_LSTM_V_ONLY_V32M512_in_ianenv_x20.pckl": {
+      "file": "navreptrainencodedenv_2020_09_22__01_14_06_PPO_VAE_LSTM_V_ONLY_V32M512_in_ianenv_x20.pckl",
+      "total_episodes": 20,
+      "overall_success_pct": 35.0,
+      "scenarios": {
+        "irosasl2": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 1000.0,
+          "episodes_detail": [
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            },
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl4": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 88,
+          "steps_mean": 88.0,
+          "episodes_detail": [
+            {
+              "steps": 88,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl6": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 576.0,
+          "episodes_detail": [
+            {
+              "steps": 152,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl_office_j1": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 100,
+          "steps_mean": 100.0,
+          "episodes_detail": [
+            {
+              "steps": 100,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j2": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 31,
+          "steps_mean": 31.0,
+          "episodes_detail": [
+            {
+              "steps": 31,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 31,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 71,
+          "steps_mean": 71.0,
+          "episodes_detail": [
+            {
+              "steps": 71,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j5": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 321,
+          "steps_mean": 203.0,
+          "episodes_detail": [
+            {
+              "steps": 85,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 321,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map4": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 204,
+          "steps_mean": 204.0,
+          "episodes_detail": [
+            {
+              "steps": 204,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosunity_scene_map6": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 72,
+          "steps_mean": 72.0,
+          "episodes_detail": [
+            {
+              "steps": 72,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl1": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 37,
+          "steps_mean": 37.0,
+          "episodes_detail": [
+            {
+              "steps": 37,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl2": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 37,
+          "steps_mean": 37.0,
+          "episodes_detail": [
+            {
+              "steps": 37,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl_office_j2": {
+          "episodes": 2,
+          "success_pct": 100.0,
+          "steps_max": 42,
+          "steps_mean": 42.0,
+          "episodes_detail": [
+            {
+              "steps": 42,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 42,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl_office_j3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 17,
+          "steps_mean": 17.0,
+          "episodes_detail": [
+            {
+              "steps": 17,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlunity_scene_map1": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 43,
+          "steps_mean": 43.0,
+          "episodes_detail": [
+            {
+              "steps": 43,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlunity_scene_map2": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 61,
+          "steps_mean": 61.0,
+          "episodes_detail": [
+            {
+              "steps": 61,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        }
+      }
+    },
+    "navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_in_ianenv_x20.pckl": {
+      "file": "navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_in_ianenv_x20.pckl",
+      "total_episodes": 20,
+      "overall_success_pct": 20.0,
+      "scenarios": {
+        "irosasl3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 208,
+          "steps_mean": 208.0,
+          "episodes_detail": [
+            {
+              "steps": 208,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl5": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 126,
+          "steps_mean": 126.0,
+          "episodes_detail": [
+            {
+              "steps": 126,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl6": {
+          "episodes": 3,
+          "success_pct": 0.0,
+          "steps_max": 1000,
+          "steps_mean": 406.3,
+          "episodes_detail": [
+            {
+              "steps": 113,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 106,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 1000,
+              "goal_reached": false,
+              "timed_out": true,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "irosasl_office_j1": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 382,
+          "steps_mean": 213.0,
+          "episodes_detail": [
+            {
+              "steps": 382,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 44,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j3": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 128,
+          "steps_mean": 96.5,
+          "episodes_detail": [
+            {
+              "steps": 128,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 65,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosasl_office_j4": {
+          "episodes": 2,
+          "success_pct": 50.0,
+          "steps_max": 118,
+          "steps_mean": 77.0,
+          "episodes_detail": [
+            {
+              "steps": 118,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 36,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 72,
+          "steps_mean": 72.0,
+          "episodes_detail": [
+            {
+              "steps": 72,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "irosunity_scene_map5": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 365,
+          "steps_mean": 365.0,
+          "episodes_detail": [
+            {
+              "steps": 365,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl2": {
+          "episodes": 2,
+          "success_pct": 50.0,
+          "steps_max": 42,
+          "steps_mean": 38.0,
+          "episodes_detail": [
+            {
+              "steps": 34,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            },
+            {
+              "steps": 42,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlasl_office_j2": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 86,
+          "steps_mean": 86.0,
+          "episodes_detail": [
+            {
+              "steps": 86,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlasl_office_j3": {
+          "episodes": 1,
+          "success_pct": 0.0,
+          "steps_max": 14,
+          "steps_mean": 14.0,
+          "episodes_detail": [
+            {
+              "steps": 14,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        },
+        "rlunity_scene_map2": {
+          "episodes": 1,
+          "success_pct": 100.0,
+          "steps_max": 56,
+          "steps_mean": 56.0,
+          "episodes_detail": [
+            {
+              "steps": 56,
+              "goal_reached": true,
+              "timed_out": false,
+              "collisioned_out": false
+            }
+          ]
+        },
+        "rlunity_scene_map3": {
+          "episodes": 2,
+          "success_pct": 0.0,
+          "steps_max": 32,
+          "steps_mean": 30.5,
+          "episodes_detail": [
+            {
+              "steps": 32,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            },
+            {
+              "steps": 29,
+              "goal_reached": false,
+              "timed_out": false,
+              "collisioned_out": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}

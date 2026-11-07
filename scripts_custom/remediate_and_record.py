@@ -76,20 +76,6 @@ SCENARIOS = [
     ("11", "irosunity_scene_map3", "IANEnv", 500),
 ]
 
-REPO_CROSS_TEST_RESULTS = {
-    "navreptrain_train": 60.0,
-    "navreptrain_test": 30.0,
-    "irosasl1": 0.0,
-    "irosasl2": 10.0,
-    "irosasl3": 0.0,
-    "irosasl_office_j1": 0.0,
-    "irosasl_office_j2": 0.0,
-    "irosasl_office_j3": 0.0,
-    "irosunity_scene_map1": 0.0,
-    "irosunity_scene_map2": 10.0,
-    "irosunity_scene_map3": 0.0,
-}
-
 
 def load_policy_and_encoder():
     policy_path = os.path.join(REPO_ROOT, "models/gym/navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_ckpt.zip")
@@ -211,7 +197,6 @@ def run_benchmark(scenario_name, env_class, max_steps, policy, encoder):
         "collision_pct": collision_pct,
         "timeout_pct": timeout_pct,
         "mean_ttg_s": mean_ttg,
-        "repo_script_success_pct": REPO_CROSS_TEST_RESULTS.get(scenario_name, "0.0%"),
         "time_taken_s": round(time.time() - t0, 1),
         "episodes_data": episodes_data
     }
@@ -459,6 +444,13 @@ def record_verified_video(prefix, scenario_name, role, seed, policy, encoder, ma
 
 
 def compile_all_deliverables(model_filename):
+    # Load measured repo cross test data from results/repo_script_cross_test.json
+    cross_test_file = os.path.join(RESULTS_DIR, "repo_script_cross_test.json")
+    repo_cross_test = {}
+    if os.path.exists(cross_test_file):
+        with open(cross_test_file, "r") as f:
+            repo_cross_test = json.load(f).get("per_scenario_benchmark_model", {})
+
     # Compile metrics_existing.csv from results/<scenario>.json
     csv_rows = []
     for prefix, scenario_name, env_class, max_steps in SCENARIOS:
@@ -466,10 +458,10 @@ def compile_all_deliverables(model_filename):
         if os.path.exists(res_file):
             with open(res_file, "r") as f:
                 b = json.load(f)
-            raw_repo_succ = b.get("repo_script_success_pct", REPO_CROSS_TEST_RESULTS.get(scenario_name, 0.0))
-            if isinstance(raw_repo_succ, str):
-                raw_repo_succ = float(raw_repo_succ.replace("%", "").strip())
-            repo_max = 175 if scenario_name.startswith("navreptrain") else 1000
+            repo_data = repo_cross_test.get(scenario_name, {})
+            repo_succ = repo_data.get("repo_script_success_pct", "N/A")
+            repo_max = repo_data.get("repo_script_max_steps", "N/A")
+            repo_ep = repo_data.get("repo_script_episodes", "N/A")
             csv_rows.append({
                 "scenario": b["scenario"],
                 "env_class": b["env_class"],
@@ -483,9 +475,9 @@ def compile_all_deliverables(model_filename):
                 "collision_pct": b["collision_pct"],
                 "timeout_pct": b["timeout_pct"],
                 "mean_ttg_s": b["mean_ttg_s"],
-                "repo_script_success_pct": raw_repo_succ,
+                "repo_script_success_pct": repo_succ,
                 "repo_script_max_steps": repo_max,
-                "repo_script_episodes": 1000
+                "repo_script_episodes": repo_ep
             })
     df_metrics = pd.DataFrame(csv_rows)
     metrics_csv_path = os.path.join(VIDEOS_DIR, "metrics_existing.csv")

@@ -132,9 +132,6 @@ HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cros
 ### 3. Full Benchmark and Video Recording (Task 2 Deliverables)
 Evaluates 20 seeded episodes per scenario (seeds 100-119) under native/calibrated limits (175 steps for NavRepTrainEnv, 500 steps for IANEnv), conducts 60-seed sweeps, records 22 videos with dynamic robot-following camera, laser points, PiP minimap, and telemetry HUD, and validates quality gates:
 ```bash
-# Re-record specific fixes and compile index:
-HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/rerecord_fixes.py
-
 # Automated quality gate verification:
 HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_videos.py
 ```
@@ -147,12 +144,16 @@ Outputs produced:
 
 Success videos come from a 60-seed sweep (seeds 0-59), benchmark rates come from seeds 100-119. Scenarios with 0% benchmark success but a success video (irosasl3, irosunity_scene_map3) reach the goal only in rare episodes.
 
-### 4. Benchmark Methodology and Discrepancies with Repo Cross-Test Script
-The benchmark results reported in `metrics_existing.csv` compare our evaluation against the ETH Zurich repository's reference script `navrep/scripts/cross_test_navreptrain_in_ianenv.py`. Differences in success rates arise from four key methodology factors:
-1. **Episode Limit (`max_steps` vs `repo_script_max_steps`)**: The repo script uses `max_episode_length = 1000` steps (200.0s) for `IANEnv` and 175 steps (35.0s) for `NavRepTrainEnv`. Our benchmark enforces a calibrated 500-step cap (100.0s) on `IANEnv` to prevent indefinite stalling while providing ample time for goal acquisition (e.g. `irosasl2` requires ~260 steps = ~52s).
-2. **Number of Episodes (`episodes` vs `repo_script_episodes`)**: The repo script runs `num_episodes = 1000` episodes, representing an aggregate asymptotic rate across broad initializations. Our benchmark evaluates 20 carefully controlled seeded episodes per scenario (seeds 100–119) for fast, 100% reproducible verification.
-3. **Deterministic Flag (`predict(deterministic=True)`)**: In both scripts, action selection uses `deterministic=True`. However, in complex multi-agent crowd environments (`PepperSim`), small trajectory divergences compound over extended horizons, leading to different episode outcomes between small 20-episode samples and 1000-episode runs.
-4. **Seed Distribution (`seeds`)**: Our benchmark strictly pins random seeds 100–119 for benchmark statistics and seeds 0–59 for the video candidate search. The repo script uses sequential unseeded episodes where environment state resets without seed pinning.
+**Programmatic Quality Gate (`scripts_custom/verify_videos.py`)**:
+The quality gate programmatically checks HUD status badge color and sidecar/filename consistency across all 22 videos. For each video, it extracts the final frame, detects the HUD status badge by pixel color (green = `GOAL REACHED`, orange = `TIMEOUT`, red = `COLLISION`), and asserts strict consistency between the HUD badge, sidecar outcome, and filename suffix. It also verifies that the robot (cyan), goal (green ring), and obstacles (light grey) are actively present in frames at 25%, 50%, and 75%, enforces frozen frame bounds ($\le 20$), and verifies minimum duration ($\ge 8.0\text{ s}$ for failure/bestprogress).
+
+### 4. Benchmark Methodology and Measured Comparison with Repo Script
+The benchmark results reported in `metrics_existing.csv` compare our evaluation against the ETH Zurich repository's reference script `navrep/scripts/cross_test_navreptrain_in_ianenv.py`. Differences in measured numbers are governed strictly by the following measured code facts:
+1. **Backend and Encoding (`backend`, `encoding`)**: Both evaluations use identical architecture and pretrained weights: `--backend VAE_LSTM --encoding VM` (`navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_ckpt.zip`).
+2. **Episode Count (`episodes` vs `repo_script_episodes`)**: In our benchmark, exactly 20 episodes are evaluated per scenario (20 episodes $\times$ 11 scenarios = 220 episodes). In the repo script, `--n 20` executes 20 total episodes across the entire suite of IANEnv environments, randomly selecting scenarios on each `env.reset()`. In this measured 20-episode rollout, individual scenarios were sampled only 1 to 3 times (e.g., `irosasl6`: 3 episodes, `irosasl_office_j1`: 2 episodes, `irosasl_office_j3`: 2 episodes, `irosasl3`: 1 episode, `irosunity_scene_map3`: 1 episode), while unsampled scenarios cannot be measured and are recorded as `N/A`.
+3. **Step Limits (`max_steps` vs `repo_script_max_steps`)**: Read directly from the repository code, `IANEnv` sets `max_episode_length = 1000` (`navrep/envs/encodedenv.py:317` and `navrep/envs/ianenv.py:29`), which our cross-test rollout verified (episodes reached up to 1000 steps). Our benchmark evaluates `IANEnv` scenarios with `max_steps = 500`. For `NavRepTrainEnv`, the code defines `time_limit = 35` and `time_step = 0.2` ($35 / 0.2 = 175$ steps in `crowd_sim/envs/crowd_sim.py:28-29`), but `cross_test_navreptrain_in_ianenv.py` only tests `IANEnv`, so repo script numbers for `navreptrain` scenarios cannot be measured and are recorded as `N/A`.
+4. **Seed Distribution (`seeds`)**: Our benchmark explicitly evaluates fixed sequential seeds 100–119 via `env.seed(seed)` for reproducible per-scenario evaluation. The repo script calls `env.reset()` without setting a seed, running unseeded stochastic episode resets.
+5. **Deterministic Flag (`predict(deterministic=True)`)**: Read directly from code, both evaluations use `deterministic=True` during policy inference (`predict(obs, deterministic=True)` in `navrep/scripts/test_navrep.py:22` and `scripts_custom/remediate_and_record.py`).
 
 ### 5. Single Scenario Recording CLI
 To record an individual scenario with custom parameters:
@@ -165,6 +166,14 @@ MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py 
     --fps 12 \
     --out submission/task2_videos/03_irosasl1_test.mp4
 ```
+
+### 6. Development Scripts
+Scratch, diagnostic, and remediation scripts used during investigation and debugging are organized in [`scripts_custom/dev/`](file://scripts_custom/dev/):
+- `scripts_custom/dev/diagnose_collisions.py`: Analyzes collision boundaries and minimum obstacle clearances.
+- `scripts_custom/dev/diagnose_ian_rendering.py`: Verifies ASL map bounding box coordinate extents and laser projection.
+- `scripts_custom/dev/finish_task2.py`: Initial orchestration scratch script for video candidates.
+- `scripts_custom/dev/rerecord_fixes.py`: Utility to re-record individual target scenarios.
+- `scripts_custom/dev/run_parallel_remediation.py`: Scratch script for parallel seed evaluation.
 
 ---
 

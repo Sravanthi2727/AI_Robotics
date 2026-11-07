@@ -149,9 +149,88 @@ def verify_video(video_path):
                     "reason": "Low std dev {:.1f} at {:.0f}%".format(std, frac * 100)
                 }
 
+    # (e) Final frame HUD status badge color verification
+    final_frame = all_frames[-1]
+    badge = final_frame[11:37, 491:626]
+    g_count = int(np.sum((badge[:, :, 1] > 150) & (badge[:, :, 1] > badge[:, :, 2].astype(int) + 40)))
+    o_count = int(np.sum((badge[:, :, 2] > 180) & (badge[:, :, 1] >= 80) & (badge[:, :, 1] <= 190) & (badge[:, :, 0] < 50)))
+    r_count = int(np.sum((badge[:, :, 2] > 150) & (badge[:, :, 1] < 60) & (badge[:, :, 0] < 60)))
+
+    if g_count > 100:
+        hud_badge = "GOAL_REACHED"
+        badge_label = "GREEN (GOAL REACHED)"
+    elif o_count > 100:
+        hud_badge = "TIMEOUT"
+        badge_label = "ORANGE (TIMEOUT)"
+    elif r_count > 100:
+        hud_badge = "COLLISION"
+        badge_label = "RED (COLLISION)"
+    else:
+        hud_badge = "UNKNOWN"
+        badge_label = "UNKNOWN"
+
+    if hud_badge != outcome:
+        return {
+            "file": base, "outcome": outcome, "hud_badge": badge_label, "steps": steps,
+            "final_dist": final_dist, "duration": round(ff_dur, 2), "frozen_frames": frozen_count,
+            "passed": False, "reason": "HUD badge ({}) does not match sidecar ({})".format(badge_label, outcome)
+        }
+
+    if base.endswith("_success.mp4") and hud_badge != "GOAL_REACHED":
+        return {
+            "file": base, "outcome": outcome, "hud_badge": badge_label, "steps": steps,
+            "final_dist": final_dist, "duration": round(ff_dur, 2), "frozen_frames": frozen_count,
+            "passed": False, "reason": "File named _success.mp4 but HUD badge is {}".format(badge_label)
+        }
+    elif (base.endswith("_failure.mp4") or base.endswith("_bestprogress.mp4")) and hud_badge not in ["COLLISION", "TIMEOUT"]:
+        return {
+            "file": base, "outcome": outcome, "hud_badge": badge_label, "steps": steps,
+            "final_dist": final_dist, "duration": round(ff_dur, 2), "frozen_frames": frozen_count,
+            "passed": False, "reason": "Failure/bestprogress file HUD badge is {}".format(badge_label)
+        }
+
+    # (f) Check robot (cyan), goal (green ring), and obstacle (light grey) pixels exist at 25%, 50%, 75%
+    for pct in [0.25, 0.50, 0.75]:
+        chk_idx = min(int(pct * total_frames), total_frames - 1)
+        f = all_frames[chk_idx]
+
+        # Robot: cyan
+        rob_count = int(np.sum((f[:, :, 0] > 160) & (f[:, :, 1] > 150) & (f[:, :, 2] < 60)))
+        if rob_count < 15:
+            return {
+                "file": base, "outcome": outcome, "hud_badge": badge_label, "steps": steps,
+                "final_dist": final_dist, "duration": round(ff_dur, 2), "frozen_frames": frozen_count,
+                "passed": False, "reason": "Robot cyan pixel count ({}) < 15 at {:.0f}%".format(rob_count, pct * 100)
+            }
+
+        # Goal: green ring
+        goal_count = int(np.sum((f[:, :, 1] > 160) & (f[:, :, 1] > f[:, :, 2].astype(int) + 35) & (f[:, :, 1] > f[:, :, 0].astype(int) + 35)))
+        if goal_count < 15:
+            return {
+                "file": base, "outcome": outcome, "hud_badge": badge_label, "steps": steps,
+                "final_dist": final_dist, "duration": round(ff_dur, 2), "frozen_frames": frozen_count,
+                "passed": False, "reason": "Goal green pixel count ({}) < 15 at {:.0f}%".format(goal_count, pct * 100)
+            }
+
+        # Obstacle: light grey
+        obs_count = int(np.sum(
+            (f[:, :, 0] > 160) & (f[:, :, 0] < 240) &
+            (f[:, :, 1] > 160) & (f[:, :, 1] < 240) &
+            (f[:, :, 2] > 160) & (f[:, :, 2] < 240) &
+            (np.abs(f[:, :, 0].astype(int) - f[:, :, 1].astype(int)) < 25) &
+            (np.abs(f[:, :, 1].astype(int) - f[:, :, 2].astype(int)) < 25)
+        ))
+        if obs_count < 15:
+            return {
+                "file": base, "outcome": outcome, "hud_badge": badge_label, "steps": steps,
+                "final_dist": final_dist, "duration": round(ff_dur, 2), "frozen_frames": frozen_count,
+                "passed": False, "reason": "Obstacle grey pixel count ({}) < 15 at {:.0f}%".format(obs_count, pct * 100)
+            }
+
     return {
         "file": base,
         "outcome": outcome,
+        "hud_badge": badge_label,
         "steps": steps,
         "final_dist": final_dist,
         "duration": round(ff_dur, 2),
@@ -174,8 +253,8 @@ def main():
     results = []
     all_passed = True
 
-    print("\n| File | Outcome | Steps | Final Dist | Duration | Frozen Frames | Quality Gate |")
-    print("| :--- | :--- | :---: | :---: | :---: | :---: | :---: |")
+    print("\n| File | Sidecar Outcome | HUD Badge Color | Steps | Final Dist | Duration | Frozen Frames | Quality Gate |")
+    print("| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |")
 
     for v in videos:
         res = verify_video(v)
@@ -183,8 +262,8 @@ def main():
         status_str = "**PASS**" if res["passed"] else "**FAIL ({})**".format(res.get("reason", ""))
         if not res["passed"]:
             all_passed = False
-        print("| `{}` | {} | {} | {}m | {}s | {} | {} |".format(
-            res["file"], res["outcome"], res["steps"], res["final_dist"],
+        print("| `{}` | {} | {} | {} | {}m | {}s | {} | {} |".format(
+            res["file"], res["outcome"], res.get("hud_badge", "N/A"), res["steps"], res["final_dist"],
             res["duration"], res["frozen_frames"], status_str
         ))
 

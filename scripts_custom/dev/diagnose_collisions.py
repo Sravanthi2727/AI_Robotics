@@ -23,7 +23,8 @@ class ScenarioEncodedEnv(EncodedEnv):
         return h
 
 def run_diagnostics():
-    model_path = "/home/sravanthi/Desktop/navrep/models/gym/navreptrainencodedenv_2020_09_22__01_14_06_PPO_VAE_LSTM_V_ONLY_V32M512_ckpt.zip"
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    model_path = os.path.join(repo_root, "models/gym/navreptrainencodedenv_2020_09_22__01_14_06_PPO_VAE_LSTM_V_ONLY_V32M512_ckpt.zip")
     print("Loading model: {}".format(model_path))
     model = PPO2.load(model_path)
     policy = NavRepCPolicy(model)
