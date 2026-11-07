@@ -1,31 +1,31 @@
 # Task 2 Video Index: ETH NavRep Scenarios Benchmark
 
-All 22 videos (11 success/best-progress and 11 honest failure/near-miss) were recorded using the robot-centric camera, top telemetry HUD, PiP minimap, dynamic human velocity vectors, and laser beam points. Every video has been programmatically verified via the frame quality gate (asserting standard deviation >= 15.0 at 10%, 25%, 50%, 75%, and 90% timestamps).
+All videos were generated from exhaustive 60-seed sweeps. Files ending in `_success.mp4` represent true `GOAL_REACHED` episodes; scenarios where the policy could not reach the goal within 60 seeds are honestly labeled `_bestprogress.mp4` (selected by smallest final distance to goal). Every video includes the dynamic 20m x 20m camera, top telemetry HUD, laser points, and PiP minimap, with frozen frames strictly bounded (<= 12 frames).
 
-| File | Scenario | Outcome | Seed | Duration | What to Look For |
-| :--- | :--- | :--- | :---: | :---: | :--- |
-| `01_navreptrain_train_success.mp4` | navreptrain_train | **SUCCESS** | `1` | 8.0s | Robot reaches goal marker smoothly while avoiding dynamic humans and walls |
-| `01_navreptrain_train_failure.mp4` | navreptrain_train | **COLLISION** | `2` | 8.0s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `02_navreptrain_test_success.mp4` | navreptrain_test | **SUCCESS** | `3` | 10.2s | Robot reaches goal marker smoothly while avoiding dynamic humans and walls |
-| `02_navreptrain_test_failure.mp4` | navreptrain_test | **COLLISION** | `1` | 10.1s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `03_irosasl1_success.mp4` | irosasl1 | **BEST PROGRESS (3.4m to goal, COLLISION)** | `39` | 8.1s | Best achievable trajectory: advanced to 3.4m of goal before collision |
-| `03_irosasl1_failure.mp4` | irosasl1 | **COLLISION** | `1` | 8.0s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `04_irosasl2_success.mp4` | irosasl2 | **BEST PROGRESS (1.2m to goal, TIMEOUT)** | `26` | 22.4s | Best achievable trajectory: advanced to 1.2m of goal before timeout |
-| `04_irosasl2_failure.mp4` | irosasl2 | **TIMEOUT** | `1` | 22.4s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `05_irosasl3_success.mp4` | irosasl3 | **BEST PROGRESS (7.6m to goal, COLLISION)** | `29` | 20.0s | Best achievable trajectory: advanced to 7.6m of goal before collision |
-| `05_irosasl3_failure.mp4` | irosasl3 | **TIMEOUT** | `1` | 22.4s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `06_irosasl_office_j1_success.mp4` | irosasl_office_j1 | **BEST PROGRESS (4.7m to goal, COLLISION)** | `29` | 8.0s | Best achievable trajectory: advanced to 4.7m of goal before collision |
-| `06_irosasl_office_j1_failure.mp4` | irosasl_office_j1 | **COLLISION** | `1` | 14.1s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `07_irosasl_office_j2_success.mp4` | irosasl_office_j2 | **BEST PROGRESS (22.0m to goal, TIMEOUT)** | `6` | 22.4s | Best achievable trajectory: advanced to 22.0m of goal before timeout |
-| `07_irosasl_office_j2_failure.mp4` | irosasl_office_j2 | **COLLISION** | `1` | 8.0s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `08_irosasl_office_j3_success.mp4` | irosasl_office_j3 | **BEST PROGRESS (2.7m to goal, COLLISION)** | `5` | 11.7s | Best achievable trajectory: advanced to 2.7m of goal before collision |
-| `08_irosasl_office_j3_failure.mp4` | irosasl_office_j3 | **COLLISION** | `1` | 10.1s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `09_irosunity_scene_map1_success.mp4` | irosunity_scene_map1 | **BEST PROGRESS (5.7m to goal, COLLISION)** | `6` | 8.0s | Best achievable trajectory: advanced to 5.7m of goal before collision |
-| `09_irosunity_scene_map1_failure.mp4` | irosunity_scene_map1 | **COLLISION** | `1` | 9.9s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `10_irosunity_scene_map2_success.mp4` | irosunity_scene_map2 | **BEST PROGRESS (11.6m to goal, TIMEOUT)** | `6` | 22.4s | Best achievable trajectory: advanced to 11.6m of goal before timeout |
-| `10_irosunity_scene_map2_failure.mp4` | irosunity_scene_map2 | **TIMEOUT** | `1` | 22.4s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
-| `11_irosunity_scene_map3_success.mp4` | irosunity_scene_map3 | **BEST PROGRESS (7.2m to goal, TIMEOUT)** | `2` | 22.4s | Best achievable trajectory: advanced to 7.2m of goal before timeout |
-| `11_irosunity_scene_map3_failure.mp4` | irosunity_scene_map3 | **COLLISION** | `1` | 21.4s | Near-miss or collision with dynamic human/obstacle; robot damage and status badge clearly displayed |
+| File | Scenario | Outcome | Seed | Steps | Sim Time | Final Distance | Duration |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| `01_navreptrain_train_failure.mp4` | navreptrain_train | **TIMEOUT** | `23` | 175 | 35.0s | 7.41m | 15.67s |
+| `01_navreptrain_train_success.mp4` | navreptrain_train | **GOAL_REACHED** | `1` | 94 | 18.8s | 0.33m | 8.92s |
+| `02_navreptrain_test_failure.mp4` | navreptrain_test | **TIMEOUT** | `26` | 175 | 35.0s | 6.75m | 15.67s |
+| `02_navreptrain_test_success.mp4` | navreptrain_test | **GOAL_REACHED** | `20` | 43 | 8.6s | 0.14m | 4.67s |
+| `03_irosasl1_bestprogress.mp4` | irosasl1 | **COLLISION** | `23` | 97 | 19.4s | 5.35m | 9.17s |
+| `03_irosasl1_failure.mp4` | irosasl1 | **COLLISION** | `23` | 97 | 19.4s | 5.35m | 9.17s |
+| `04_irosasl2_failure.mp4` | irosasl2 | **COLLISION** | `4` | 383 | 76.6s | 2.49m | 33.0s |
+| `04_irosasl2_success.mp4` | irosasl2 | **GOAL_REACHED** | `26` | 259 | 51.8s | 21.47m | 22.67s |
+| `05_irosasl3_failure.mp4` | irosasl3 | **COLLISION** | `0` | 156 | 31.2s | 17.73m | 14.08s |
+| `05_irosasl3_success.mp4` | irosasl3 | **GOAL_REACHED** | `56` | 401 | 80.2s | 21.56m | 34.5s |
+| `06_irosasl_office_j1_bestprogress.mp4` | irosasl_office_j1 | **COLLISION** | `23` | 151 | 30.2s | 4.94m | 13.67s |
+| `06_irosasl_office_j1_failure.mp4` | irosasl_office_j1 | **COLLISION** | `0` | 86 | 17.2s | 5.89m | 8.25s |
+| `07_irosasl_office_j2_failure.mp4` | irosasl_office_j2 | **COLLISION** | `2` | 199 | 39.8s | 22.77m | 17.67s |
+| `07_irosasl_office_j2_success.mp4` | irosasl_office_j2 | **GOAL_REACHED** | `47` | 461 | 92.2s | 36.95m | 39.5s |
+| `08_irosasl_office_j3_bestprogress.mp4` | irosasl_office_j3 | **COLLISION** | `32` | 119 | 23.8s | 2.19m | 11.0s |
+| `08_irosasl_office_j3_failure.mp4` | irosasl_office_j3 | **COLLISION** | `1` | 102 | 20.4s | 6.01m | 9.58s |
+| `09_irosunity_scene_map1_bestprogress.mp4` | irosunity_scene_map1 | **COLLISION** | `39` | 125 | 25.0s | 5.69m | 11.5s |
+| `09_irosunity_scene_map1_failure.mp4` | irosunity_scene_map1 | **COLLISION** | `0` | 215 | 43.0s | 5.79m | 19.0s |
+| `10_irosunity_scene_map2_failure.mp4` | irosunity_scene_map2 | **COLLISION** | `17` | 331 | 66.2s | 3.84m | 28.67s |
+| `10_irosunity_scene_map2_success.mp4` | irosunity_scene_map2 | **GOAL_REACHED** | `58` | 291 | 58.2s | 23.01m | 25.33s |
+| `11_irosunity_scene_map3_failure.mp4` | irosunity_scene_map3 | **COLLISION** | `1` | 238 | 47.6s | 4.58m | 20.92s |
+| `11_irosunity_scene_map3_success.mp4` | irosunity_scene_map3 | **GOAL_REACHED** | `34` | 252 | 50.4s | 17.62m | 22.08s |
 
 
 *Evaluation Controller: `PPO_VAE_LSTM_VM_V32M512_ckpt` | Sim Resolution: 640x640 @ 12 FPS*

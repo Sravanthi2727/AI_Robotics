@@ -1,0 +1,14 @@
+{
+  "file": "03_irosasl1_failure.mp4",
+  "scenario": "irosasl1",
+  "prefix": "03",
+  "role": "failure",
+  "outcome": "COLLISION",
+  "seed": 23,
+  "steps": 97,
+  "sim_time": 19.4,
+  "final_dist": 5.35,
+  "duration": 9.17,
+  "frames": 110,
+  "hold_frames": 12
+}

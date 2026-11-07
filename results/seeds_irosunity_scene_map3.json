@@ -1,0 +1,422 @@
+[
+  {
+    "seed": 0,
+    "outcome": "COLLISION",
+    "steps": 70,
+    "sim_time": 14.0,
+    "final_dist": 12.38
+  },
+  {
+    "seed": 1,
+    "outcome": "COLLISION",
+    "steps": 238,
+    "sim_time": 47.6,
+    "final_dist": 4.58
+  },
+  {
+    "seed": 2,
+    "outcome": "GOAL_REACHED",
+    "steps": 281,
+    "sim_time": 56.2,
+    "final_dist": 17.26
+  },
+  {
+    "seed": 3,
+    "outcome": "COLLISION",
+    "steps": 69,
+    "sim_time": 13.8,
+    "final_dist": 12.41
+  },
+  {
+    "seed": 4,
+    "outcome": "COLLISION",
+    "steps": 82,
+    "sim_time": 16.4,
+    "final_dist": 11.52
+  },
+  {
+    "seed": 5,
+    "outcome": "COLLISION",
+    "steps": 91,
+    "sim_time": 18.2,
+    "final_dist": 12.3
+  },
+  {
+    "seed": 6,
+    "outcome": "COLLISION",
+    "steps": 68,
+    "sim_time": 13.6,
+    "final_dist": 11.73
+  },
+  {
+    "seed": 7,
+    "outcome": "COLLISION",
+    "steps": 64,
+    "sim_time": 12.8,
+    "final_dist": 12.32
+  },
+  {
+    "seed": 8,
+    "outcome": "COLLISION",
+    "steps": 54,
+    "sim_time": 10.8,
+    "final_dist": 12.53
+  },
+  {
+    "seed": 9,
+    "outcome": "COLLISION",
+    "steps": 157,
+    "sim_time": 31.4,
+    "final_dist": 6.17
+  },
+  {
+    "seed": 10,
+    "outcome": "COLLISION",
+    "steps": 74,
+    "sim_time": 14.8,
+    "final_dist": 12.37
+  },
+  {
+    "seed": 11,
+    "outcome": "COLLISION",
+    "steps": 95,
+    "sim_time": 19.0,
+    "final_dist": 12.2
+  },
+  {
+    "seed": 12,
+    "outcome": "COLLISION",
+    "steps": 156,
+    "sim_time": 31.2,
+    "final_dist": 10.94
+  },
+  {
+    "seed": 13,
+    "outcome": "COLLISION",
+    "steps": 99,
+    "sim_time": 19.8,
+    "final_dist": 10.58
+  },
+  {
+    "seed": 14,
+    "outcome": "COLLISION",
+    "steps": 74,
+    "sim_time": 14.8,
+    "final_dist": 12.35
+  },
+  {
+    "seed": 15,
+    "outcome": "COLLISION",
+    "steps": 57,
+    "sim_time": 11.4,
+    "final_dist": 12.43
+  },
+  {
+    "seed": 16,
+    "outcome": "COLLISION",
+    "steps": 105,
+    "sim_time": 21.0,
+    "final_dist": 12.14
+  },
+  {
+    "seed": 17,
+    "outcome": "COLLISION",
+    "steps": 165,
+    "sim_time": 33.0,
+    "final_dist": 6.49
+  },
+  {
+    "seed": 18,
+    "outcome": "COLLISION",
+    "steps": 88,
+    "sim_time": 17.6,
+    "final_dist": 10.83
+  },
+  {
+    "seed": 19,
+    "outcome": "COLLISION",
+    "steps": 139,
+    "sim_time": 27.8,
+    "final_dist": 6.88
+  },
+  {
+    "seed": 20,
+    "outcome": "COLLISION",
+    "steps": 85,
+    "sim_time": 17.0,
+    "final_dist": 10.81
+  },
+  {
+    "seed": 21,
+    "outcome": "COLLISION",
+    "steps": 155,
+    "sim_time": 31.0,
+    "final_dist": 6.11
+  },
+  {
+    "seed": 22,
+    "outcome": "COLLISION",
+    "steps": 75,
+    "sim_time": 15.0,
+    "final_dist": 12.31
+  },
+  {
+    "seed": 23,
+    "outcome": "COLLISION",
+    "steps": 92,
+    "sim_time": 18.4,
+    "final_dist": 10.94
+  },
+  {
+    "seed": 24,
+    "outcome": "COLLISION",
+    "steps": 71,
+    "sim_time": 14.2,
+    "final_dist": 12.36
+  },
+  {
+    "seed": 25,
+    "outcome": "COLLISION",
+    "steps": 55,
+    "sim_time": 11.0,
+    "final_dist": 12.44
+  },
+  {
+    "seed": 26,
+    "outcome": "COLLISION",
+    "steps": 214,
+    "sim_time": 42.8,
+    "final_dist": 6.06
+  },
+  {
+    "seed": 27,
+    "outcome": "GOAL_REACHED",
+    "steps": 284,
+    "sim_time": 56.8,
+    "final_dist": 17.5
+  },
+  {
+    "seed": 28,
+    "outcome": "COLLISION",
+    "steps": 78,
+    "sim_time": 15.6,
+    "final_dist": 12.35
+  },
+  {
+    "seed": 29,
+    "outcome": "COLLISION",
+    "steps": 57,
+    "sim_time": 11.4,
+    "final_dist": 12.27
+  },
+  {
+    "seed": 30,
+    "outcome": "COLLISION",
+    "steps": 79,
+    "sim_time": 15.8,
+    "final_dist": 11.27
+  },
+  {
+    "seed": 31,
+    "outcome": "COLLISION",
+    "steps": 331,
+    "sim_time": 66.2,
+    "final_dist": 7.28
+  },
+  {
+    "seed": 32,
+    "outcome": "COLLISION",
+    "steps": 56,
+    "sim_time": 11.2,
+    "final_dist": 12.42
+  },
+  {
+    "seed": 33,
+    "outcome": "COLLISION",
+    "steps": 150,
+    "sim_time": 30.0,
+    "final_dist": 6.79
+  },
+  {
+    "seed": 34,
+    "outcome": "GOAL_REACHED",
+    "steps": 252,
+    "sim_time": 50.4,
+    "final_dist": 17.62
+  },
+  {
+    "seed": 35,
+    "outcome": "COLLISION",
+    "steps": 84,
+    "sim_time": 16.8,
+    "final_dist": 12.47
+  },
+  {
+    "seed": 36,
+    "outcome": "COLLISION",
+    "steps": 76,
+    "sim_time": 15.2,
+    "final_dist": 12.41
+  },
+  {
+    "seed": 37,
+    "outcome": "COLLISION",
+    "steps": 69,
+    "sim_time": 13.8,
+    "final_dist": 12.35
+  },
+  {
+    "seed": 38,
+    "outcome": "COLLISION",
+    "steps": 117,
+    "sim_time": 23.4,
+    "final_dist": 11.69
+  },
+  {
+    "seed": 39,
+    "outcome": "COLLISION",
+    "steps": 70,
+    "sim_time": 14.0,
+    "final_dist": 12.4
+  },
+  {
+    "seed": 40,
+    "outcome": "GOAL_REACHED",
+    "steps": 304,
+    "sim_time": 60.8,
+    "final_dist": 17.16
+  },
+  {
+    "seed": 41,
+    "outcome": "COLLISION",
+    "steps": 150,
+    "sim_time": 30.0,
+    "final_dist": 6.81
+  },
+  {
+    "seed": 42,
+    "outcome": "COLLISION",
+    "steps": 129,
+    "sim_time": 25.8,
+    "final_dist": 12.15
+  },
+  {
+    "seed": 43,
+    "outcome": "COLLISION",
+    "steps": 84,
+    "sim_time": 16.8,
+    "final_dist": 10.84
+  },
+  {
+    "seed": 44,
+    "outcome": "COLLISION",
+    "steps": 80,
+    "sim_time": 16.0,
+    "final_dist": 10.52
+  },
+  {
+    "seed": 45,
+    "outcome": "COLLISION",
+    "steps": 76,
+    "sim_time": 15.2,
+    "final_dist": 12.35
+  },
+  {
+    "seed": 46,
+    "outcome": "COLLISION",
+    "steps": 101,
+    "sim_time": 20.2,
+    "final_dist": 10.44
+  },
+  {
+    "seed": 47,
+    "outcome": "COLLISION",
+    "steps": 72,
+    "sim_time": 14.4,
+    "final_dist": 12.18
+  },
+  {
+    "seed": 48,
+    "outcome": "COLLISION",
+    "steps": 152,
+    "sim_time": 30.4,
+    "final_dist": 6.43
+  },
+  {
+    "seed": 49,
+    "outcome": "COLLISION",
+    "steps": 167,
+    "sim_time": 33.4,
+    "final_dist": 6.09
+  },
+  {
+    "seed": 50,
+    "outcome": "COLLISION",
+    "steps": 76,
+    "sim_time": 15.2,
+    "final_dist": 12.35
+  },
+  {
+    "seed": 51,
+    "outcome": "COLLISION",
+    "steps": 80,
+    "sim_time": 16.0,
+    "final_dist": 12.38
+  },
+  {
+    "seed": 52,
+    "outcome": "COLLISION",
+    "steps": 83,
+    "sim_time": 16.6,
+    "final_dist": 10.65
+  },
+  {
+    "seed": 53,
+    "outcome": "COLLISION",
+    "steps": 57,
+    "sim_time": 11.4,
+    "final_dist": 12.45
+  },
+  {
+    "seed": 54,
+    "outcome": "COLLISION",
+    "steps": 95,
+    "sim_time": 19.0,
+    "final_dist": 11.26
+  },
+  {
+    "seed": 55,
+    "outcome": "COLLISION",
+    "steps": 141,
+    "sim_time": 28.2,
+    "final_dist": 7.0
+  },
+  {
+    "seed": 56,
+    "outcome": "COLLISION",
+    "steps": 80,
+    "sim_time": 16.0,
+    "final_dist": 12.2
+  },
+  {
+    "seed": 57,
+    "outcome": "COLLISION",
+    "steps": 141,
+    "sim_time": 28.2,
+    "final_dist": 6.35
+  },
+  {
+    "seed": 58,
+    "outcome": "COLLISION",
+    "steps": 91,
+    "sim_time": 18.2,
+    "final_dist": 12.44
+  },
+  {
+    "seed": 59,
+    "outcome": "COLLISION",
+    "steps": 75,
+    "sim_time": 15.0,
+    "final_dist": 11.71
+  }
+]

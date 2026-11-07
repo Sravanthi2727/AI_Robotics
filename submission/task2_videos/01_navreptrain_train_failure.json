@@ -1,0 +1,14 @@
+{
+  "file": "01_navreptrain_train_failure.mp4",
+  "scenario": "navreptrain_train",
+  "prefix": "01",
+  "role": "failure",
+  "outcome": "TIMEOUT",
+  "seed": 23,
+  "steps": 175,
+  "sim_time": 35.0,
+  "final_dist": 7.41,
+  "duration": 15.67,
+  "frames": 188,
+  "hold_frames": 12
+}

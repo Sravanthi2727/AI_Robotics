@@ -1,0 +1,14 @@
+{
+  "file": "10_irosunity_scene_map2_success.mp4",
+  "scenario": "irosunity_scene_map2",
+  "prefix": "10",
+  "role": "success",
+  "outcome": "GOAL_REACHED",
+  "seed": 58,
+  "steps": 291,
+  "sim_time": 58.2,
+  "final_dist": 23.01,
+  "duration": 25.33,
+  "frames": 304,
+  "hold_frames": 12
+}

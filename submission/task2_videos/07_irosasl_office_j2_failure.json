@@ -1,0 +1,14 @@
+{
+  "file": "07_irosasl_office_j2_failure.mp4",
+  "scenario": "irosasl_office_j2",
+  "prefix": "07",
+  "role": "failure",
+  "outcome": "COLLISION",
+  "seed": 2,
+  "steps": 199,
+  "sim_time": 39.8,
+  "final_dist": 22.77,
+  "duration": 17.67,
+  "frames": 212,
+  "hold_frames": 12
+}

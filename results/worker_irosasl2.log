@@ -1,0 +1,54 @@
+/home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:526: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint8 = np.dtype([("qint8", np.int8, 1)])
+/home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:527: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_quint8 = np.dtype([("quint8", np.uint8, 1)])
+/home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:528: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint16 = np.dtype([("qint16", np.int16, 1)])
+/home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:529: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_quint16 = np.dtype([("quint16", np.uint16, 1)])
+/home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:530: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint32 = np.dtype([("qint32", np.int32, 1)])
+/home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:535: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  np_resource = np.dtype([("resource", np.ubyte, 1)])
+Using TensorFlow backend.
+Ros was not found, disabled.
+[POLICY] Loading PPO2 model from: /home/sravanthi/Desktop/navrep/models/gym/navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_ckpt.zip
+WARNING:tensorflow:From /home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/stable_baselines/common/policies.py:561: flatten (from tensorflow.python.layers.core) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use keras.layers.flatten instead.
+WARNING:tensorflow:From /home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py:263: colocate_with (from tensorflow.python.framework.ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Colocations handled automatically by placer.
+WARNING:tensorflow:From /home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/tensorflow/python/ops/math_ops.py:3066: to_int32 (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.cast instead.
+/home/sravanthi/Desktop/navrep/env/lib/python3.6/site-packages/gym/logger.py:30: UserWarning: [33mWARN: Box bound precision lowered by casting to float32[0m
+  warnings.warn(colorize('%s: %s'%('WARN', msg % args), 'yellow'))
+WARNING:tensorflow:From /home/sravanthi/Desktop/navrep/navrep/models/vae2d.py:44: conv2d (from tensorflow.python.layers.convolutional) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use keras.layers.conv2d instead.
+WARNING:tensorflow:From /home/sravanthi/Desktop/navrep/navrep/models/vae2d.py:58: dense (from tensorflow.python.layers.core) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use keras.layers.dense instead.
+WARNING:tensorflow:From /home/sravanthi/Desktop/navrep/navrep/models/vae2d.py:71: conv2d_transpose (from tensorflow.python.layers.convolutional) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use keras.layers.conv2d_transpose instead.
+model using cpu
+input dropout mode = False
+output dropout mode = False
+recurrent dropout mode = False
+
+======================================================================
+>>> BENCHMARK: irosasl2 (max_steps=500)
+======================================================================
+  -> Saved benchmark to: /home/sravanthi/Desktop/navrep/results/irosasl2.json
+  -> Results: Success=45.0% Collision=5.0% Timeout=50.0% Mean TTG=57.6 (Time=154.6s)
+
+>>> SEED SEARCH (seeds 0-59): irosasl2 (max_steps=500)
+  -> Saved 60 seeds to: /home/sravanthi/Desktop/navrep/results/seeds_irosasl2.json
+
+[RECORD] -> Recording 04_irosasl2_success.mp4 (Seed 26, Role=success)
+  -> Saved video (272 frames, 22.67s, status=GOAL_REACHED, dist=21.47m) + sidecar: /home/sravanthi/Desktop/navrep/submission/task2_videos/04_irosasl2_success.json
+
+[RECORD] -> Recording 04_irosasl2_failure.mp4 (Seed 4, Role=failure)
+  -> Saved video (396 frames, 33.00s, status=COLLISION, dist=2.49m) + sidecar: /home/sravanthi/Desktop/navrep/submission/task2_videos/04_irosasl2_failure.json

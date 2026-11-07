@@ -1,0 +1,14 @@
+{
+  "file": "09_irosunity_scene_map1_bestprogress.mp4",
+  "scenario": "irosunity_scene_map1",
+  "prefix": "09",
+  "role": "bestprogress",
+  "outcome": "COLLISION",
+  "seed": 39,
+  "steps": 125,
+  "sim_time": 25.0,
+  "final_dist": 5.69,
+  "duration": 11.5,
+  "frames": 138,
+  "hold_frames": 12
+}

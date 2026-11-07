@@ -1,0 +1,14 @@
+{
+  "file": "02_navreptrain_test_success.mp4",
+  "scenario": "navreptrain_test",
+  "prefix": "02",
+  "role": "success",
+  "outcome": "GOAL_REACHED",
+  "seed": 20,
+  "steps": 43,
+  "sim_time": 8.6,
+  "final_dist": 0.14,
+  "duration": 4.67,
+  "frames": 56,
+  "hold_frames": 12
+}

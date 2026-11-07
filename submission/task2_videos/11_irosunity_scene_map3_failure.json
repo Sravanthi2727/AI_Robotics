@@ -1,0 +1,14 @@
+{
+  "file": "11_irosunity_scene_map3_failure.mp4",
+  "scenario": "irosunity_scene_map3",
+  "prefix": "11",
+  "role": "failure",
+  "outcome": "COLLISION",
+  "seed": 1,
+  "steps": 238,
+  "sim_time": 47.6,
+  "final_dist": 4.58,
+  "duration": 20.92,
+  "frames": 251,
+  "hold_frames": 12
+}

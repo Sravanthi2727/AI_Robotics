@@ -36,16 +36,28 @@ MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cross_test_navreptr
 
 ## 2. Existing Scenarios Benchmark and Video Recordings (Task 2)
 
-### Full Batch Evaluation and Recording Suite (11 Scenarios)
-Evaluates 20 seeded episodes per scenario (seeds 100-119), finds representative success and failure seeds, records verified 640x640 H.264 MP4 videos with dynamic robot-following camera and PiP minimap, and enforces the frame quality gate (asserting std >= 15.0 at 10%, 25%, 50%, 75%, and 90% timestamps):
+### Full Batch Benchmark, Sweep, and Video Suite (11 Scenarios)
+Evaluates 20 seeded episodes per scenario (seeds 100-119) under native/documented episode limits (175 steps for NavRepTrainEnv, 500 steps for IANEnv), conducts 60-seed sweeps for verified seed selection, records 640x640 H.264 MP4 videos with dynamic 20m x 20m robot-following camera, laser scans, and PiP minimap, and enforces programmatic quality gates:
 ```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/evaluate_and_record_existing.py
+# Parallel orchestrator (3 concurrent workers):
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/run_parallel_remediation.py
+
+# Or single-scenario CLI:
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/remediate_and_record.py --scenario navreptrain_train
 ```
 Outputs produced:
 - `submission/task2_videos/metrics_existing.csv`
 - `submission/task2_videos/VIDEO_INDEX.md`
-- `submission/task2_videos/<NN>_<scenario>_success.mp4`
-- `submission/task2_videos/<NN>_<scenario>_failure.mp4`
+- `submission/task2_videos/<NN>_<scenario>_success.mp4` (only if `GOAL_REACHED`)
+- `submission/task2_videos/<NN>_<scenario>_bestprogress.mp4` (smallest final distance to goal when no success within 60 seeds)
+- `submission/task2_videos/<NN>_<scenario>_failure.mp4` (COLLISION or TIMEOUT, $\ge 30$ steps, duration $\ge 8.0\text{ s}$)
+- `submission/task2_videos/*.json` (sidecar metadata per video)
+
+### Automated Video Verification Suite
+Validates suffix/outcome consistency, frozen frames ($\le 20$), standard deviation $\ge 15.0$ at 10/25/50/75/90%, and duration $\ge 8.0\text{ s}$ across all 22 videos:
+```bash
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_videos.py
+```
 
 ### Individual Scenario Video Recording CLI
 Records an individual scenario episode with custom seed, backend, and camera overlay:

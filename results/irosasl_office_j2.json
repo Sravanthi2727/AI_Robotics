@@ -1,0 +1,157 @@
+{
+  "scenario": "irosasl_office_j2",
+  "env_class": "IANEnv",
+  "backend": "VAE_LSTM",
+  "encoding": "VM",
+  "max_steps": 500,
+  "episodes": 20,
+  "seeds": "100-119",
+  "success_pct": 5.0,
+  "collision_pct": 60.0,
+  "timeout_pct": 35.0,
+  "mean_ttg_s": 98.6,
+  "repo_script_success_pct": "0.0%",
+  "time_taken_s": 467.1,
+  "episodes_data": [
+    {
+      "seed": 100,
+      "outcome": "TIMEOUT",
+      "steps": 500,
+      "sim_time": 100.0,
+      "final_dist": 12.51
+    },
+    {
+      "seed": 101,
+      "outcome": "COLLISION",
+      "steps": 329,
+      "sim_time": 65.8,
+      "final_dist": 13.73
+    },
+    {
+      "seed": 102,
+      "outcome": "TIMEOUT",
+      "steps": 500,
+      "sim_time": 100.0,
+      "final_dist": 15.71
+    },
+    {
+      "seed": 103,
+      "outcome": "COLLISION",
+      "steps": 43,
+      "sim_time": 8.6,
+      "final_dist": 34.76
+    },
+    {
+      "seed": 104,
+      "outcome": "GOAL_REACHED",
+      "steps": 493,
+      "sim_time": 98.6,
+      "final_dist": 36.57
+    },
+    {
+      "seed": 105,
+      "outcome": "COLLISION",
+      "steps": 45,
+      "sim_time": 9.0,
+      "final_dist": 33.57
+    },
+    {
+      "seed": 106,
+      "outcome": "TIMEOUT",
+      "steps": 500,
+      "sim_time": 100.0,
+      "final_dist": 7.91
+    },
+    {
+      "seed": 107,
+      "outcome": "COLLISION",
+      "steps": 349,
+      "sim_time": 69.8,
+      "final_dist": 11.52
+    },
+    {
+      "seed": 108,
+      "outcome": "COLLISION",
+      "steps": 48,
+      "sim_time": 9.6,
+      "final_dist": 33.75
+    },
+    {
+      "seed": 109,
+      "outcome": "TIMEOUT",
+      "steps": 500,
+      "sim_time": 100.0,
+      "final_dist": 18.86
+    },
+    {
+      "seed": 110,
+      "outcome": "TIMEOUT",
+      "steps": 500,
+      "sim_time": 100.0,
+      "final_dist": 3.2
+    },
+    {
+      "seed": 111,
+      "outcome": "TIMEOUT",
+      "steps": 500,
+      "sim_time": 100.0,
+      "final_dist": 32.49
+    },
+    {
+      "seed": 112,
+      "outcome": "COLLISION",
+      "steps": 125,
+      "sim_time": 25.0,
+      "final_dist": 34.36
+    },
+    {
+      "seed": 113,
+      "outcome": "TIMEOUT",
+      "steps": 500,
+      "sim_time": 100.0,
+      "final_dist": 1.98
+    },
+    {
+      "seed": 114,
+      "outcome": "COLLISION",
+      "steps": 356,
+      "sim_time": 71.2,
+      "final_dist": 11.68
+    },
+    {
+      "seed": 115,
+      "outcome": "COLLISION",
+      "steps": 132,
+      "sim_time": 26.4,
+      "final_dist": 35.15
+    },
+    {
+      "seed": 116,
+      "outcome": "COLLISION",
+      "steps": 115,
+      "sim_time": 23.0,
+      "final_dist": 34.71
+    },
+    {
+      "seed": 117,
+      "outcome": "COLLISION",
+      "steps": 73,
+      "sim_time": 14.6,
+      "final_dist": 32.05
+    },
+    {
+      "seed": 118,
+      "outcome": "COLLISION",
+      "steps": 364,
+      "sim_time": 72.8,
+      "final_dist": 12.66
+    },
+    {
+      "seed": 119,
+      "outcome": "COLLISION",
+      "steps": 228,
+      "sim_time": 45.6,
+      "final_dist": 21.58
+    }
+  ]
+}

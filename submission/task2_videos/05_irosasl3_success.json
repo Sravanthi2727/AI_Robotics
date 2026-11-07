@@ -1,0 +1,14 @@
+{
+  "file": "05_irosasl3_success.mp4",
+  "scenario": "irosasl3",
+  "prefix": "05",
+  "role": "success",
+  "outcome": "GOAL_REACHED",
+  "seed": 56,
+  "steps": 401,
+  "sim_time": 80.2,
+  "final_dist": 21.56,
+  "duration": 34.5,
+  "frames": 414,
+  "hold_frames": 12
+}

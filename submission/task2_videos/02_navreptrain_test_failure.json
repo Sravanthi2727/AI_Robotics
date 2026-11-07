@@ -1,0 +1,14 @@
+{
+  "file": "02_navreptrain_test_failure.mp4",
+  "scenario": "navreptrain_test",
+  "prefix": "02",
+  "role": "failure",
+  "outcome": "TIMEOUT",
+  "seed": 26,
+  "steps": 175,
+  "sim_time": 35.0,
+  "final_dist": 6.75,
+  "duration": 15.67,
+  "frames": 188,
+  "hold_frames": 12
+}

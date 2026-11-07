@@ -108,6 +108,9 @@ ln -sfn "$REPO_ROOT/maps" "$HOME/maps"
 | 7 | `ModuleNotFoundError: No module named 'importlib.resources'` in `imageio_ffmpeg` | `importlib.resources` is Python 3.7+; Python 3.6 requires `importlib_resources`. | Dynamically mapped `sys.modules['importlib.resources'] = importlib_resources` in recording scripts. |
 | 8 | IANEnv rendering bounds inverted & black screen | `pymap2d.get_extent_xy()` returns `[xmin, xmax, ymin, ymax]`; unpacking as `x_min, y_min, ...` inverted Y-span. Also, polygon index 0 is the bounding box. | Corrected coordinate unpacking, added dynamic robot-following 20m x 20m camera, PiP overview map, and laser points. |
 | 9 | Robot stuck in place in initial recordings | Evaluating V_ONLY policy in deterministic mode led to local minima in symmetric arenas. | Upgraded evaluation to `VAE_LSTM VM` (`navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_ckpt.zip`), enabling recurrent temporal memory ($h$). |
+| 10 | Artificial 250-step cap truncated valid navigation | A hardcoded 250-step limit prematurely timed out longer IANEnv scenarios (e.g., `irosasl2` requires ~55–60s = ~280–300 steps). | Removed artificial cap; aligned benchmarks with native limits: 175 steps (35.0s) for `NavRepTrainEnv` and 500 steps (100.0s, native 1000) for `IANEnv`. Success jumped from 0% to 45% on `irosasl2` and 50% on `irosunity_scene_map2`. |
+| 11 | Misleading outcome labeling & early crash freezes | Initial videos contained mislabeled outcomes and long frozen-frame tails on early crashes. | Enforced strict labeling from sidecar metadata (`_success.mp4` strictly for `GOAL_REACHED`; `_bestprogress.mp4` for non-reaching sweeps). Constrained hold padding to $\le 12$ frames and selected failure runs lasting $\ge 30$ steps and $\ge 8.0\text{ s}$. |
+| 12 | Frozen-frame false positives during slow motion | Scaling image diff by $255.0$ caused whole-frame mean intensity changes of ~0.003 to be flagged as frozen even during active robot motion. | Formulated unscaled mean absolute intensity difference: $\Delta_{\text{frame}} = \text{mean}(|\text{gray}_t - \text{gray}_{t-1}|) < 0.01$. Completely eliminated false positives while reliably catching static freeze padding. |
 
 ---
 
@@ -116,48 +119,31 @@ ln -sfn "$REPO_ROOT/maps" "$HOME/maps"
 ### 1. Verification Smoke Test
 Executes a 50-step rollout across both `NavRepTrainEnv` and `IANEnv`:
 ```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/smoke_test.py
-```
-**Expected Output**:
-```
-=== NavRep Smoke Test ===
-Python version: 3.6.15 ...
-[1/2] Initializing NavRepTrainEnv(silent=True)...
-Reset successful. Observation shape: [(1080,), (5,)]
-Running 50 random action steps...
-NavRepTrainEnv completed 50 steps successfully.
-[2/2] Initializing IANEnv(silent=True)...
-Reset successful. Observation shape: [(1080,), (5,)]
-Running 50 random action steps...
-IANEnv completed 50 steps successfully.
-=== Smoke test PASSED cleanly! ===
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/smoke_test.py
 ```
 
 ### 2. Pretrained Policy Cross-Testing (Repo's Native Script)
 Runs the original cross-test script on compatible PPO models:
 ```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cross_test_navreptrain_in_ianenv.py \
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cross_test_navreptrain_in_ianenv.py \
     --backend VAE_LSTM --encoding VM --no-gpu --dry-run --n 11
-```
-**Expected Output**:
-```
-Compatible C models:
-navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_ckpt.zip
-...
-Cross Testing: Episode 0 - nan: 0% ...
-Cross Testing: Episode 4 - 0.25: 36% ...
 ```
 
 ### 3. Full Benchmark and Video Recording (Task 2 Deliverables)
-Evaluates 20 seeded episodes per scenario (seeds 100-119), searches seeds for representative success and failure episodes, records H.264 MP4 videos with telemetry HUD, and enforces the frame quality gate:
+Evaluates 20 seeded episodes per scenario (seeds 100-119) under native limits (175 steps for NavRepTrainEnv, 500 steps for IANEnv), conducts 60-seed sweeps, records 22 videos with dynamic robot-following camera and telemetry HUD, and validates quality gates:
 ```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/evaluate_and_record_existing.py
+# Parallel orchestrator across all 11 scenarios:
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/run_parallel_remediation.py
+
+# Automated quality gate verification:
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_videos.py
 ```
 Outputs produced:
-- `submission/task2_videos/metrics_existing.csv`: Aggregated benchmark metrics across all 11 scenarios.
-- `submission/task2_videos/VIDEO_INDEX.md`: Complete video manifest with seeds, durations, and observations.
-- `submission/task2_videos/<NN>_<scenario>_success.mp4`: Verified successful (or best-progress) runs.
-- `submission/task2_videos/<NN>_<scenario>_failure.mp4`: Verified honest collisions or timeout runs.
+- `submission/task2_videos/metrics_existing.csv`: Aggregated benchmark metrics with `max_steps` column.
+- `submission/task2_videos/VIDEO_INDEX.md`: Generated strictly from sidecar JSON files.
+- `submission/task2_videos/<NN>_<scenario>_success.mp4`: True `GOAL_REACHED` episodes.
+- `submission/task2_videos/<NN>_<scenario>_bestprogress.mp4`: Honest best-progress runs for scenarios without goal reaches.
+- `submission/task2_videos/<NN>_<scenario>_failure.mp4`: Verified honest collision or timeout runs ($\ge 30$ steps, $\ge 8.0\text{ s}$).
 
 ### 4. Single Scenario Recording CLI
 To record an individual scenario with custom parameters:

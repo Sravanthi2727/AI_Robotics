@@ -1,0 +1,157 @@
+{
+  "scenario": "navreptrain_train",
+  "env_class": "NavRepTrainEncodedEnv",
+  "backend": "VAE_LSTM",
+  "encoding": "VM",
+  "max_steps": 175,
+  "episodes": 20,
+  "seeds": "100-119",
+  "success_pct": 65.0,
+  "collision_pct": 30.0,
+  "timeout_pct": 5.0,
+  "mean_ttg_s": 17.8,
+  "repo_script_success_pct": "60.0%",
+  "time_taken_s": 51.6,
+  "episodes_data": [
+    {
+      "seed": 100,
+      "outcome": "GOAL_REACHED",
+      "steps": 108,
+      "sim_time": 21.6,
+      "final_dist": 0.35
+    },
+    {
+      "seed": 101,
+      "outcome": "COLLISION",
+      "steps": 28,
+      "sim_time": 5.6,
+      "final_dist": 4.17
+    },
+    {
+      "seed": 102,
+      "outcome": "TIMEOUT",
+      "steps": 175,
+      "sim_time": 35.0,
+      "final_dist": 11.74
+    },
+    {
+      "seed": 103,
+      "outcome": "COLLISION",
+      "steps": 23,
+      "sim_time": 4.6,
+      "final_dist": 6.71
+    },
+    {
+      "seed": 104,
+      "outcome": "GOAL_REACHED",
+      "steps": 91,
+      "sim_time": 18.2,
+      "final_dist": 0.42
+    },
+    {
+      "seed": 105,
+      "outcome": "GOAL_REACHED",
+      "steps": 76,
+      "sim_time": 15.2,
+      "final_dist": 0.3
+    },
+    {
+      "seed": 106,
+      "outcome": "GOAL_REACHED",
+      "steps": 83,
+      "sim_time": 16.6,
+      "final_dist": 0.25
+    },
+    {
+      "seed": 107,
+      "outcome": "GOAL_REACHED",
+      "steps": 94,
+      "sim_time": 18.8,
+      "final_dist": 0.16
+    },
+    {
+      "seed": 108,
+      "outcome": "COLLISION",
+      "steps": 55,
+      "sim_time": 11.0,
+      "final_dist": 7.96
+    },
+    {
+      "seed": 109,
+      "outcome": "COLLISION",
+      "steps": 29,
+      "sim_time": 5.8,
+      "final_dist": 12.08
+    },
+    {
+      "seed": 110,
+      "outcome": "COLLISION",
+      "steps": 30,
+      "sim_time": 6.0,
+      "final_dist": 0.79
+    },
+    {
+      "seed": 111,
+      "outcome": "GOAL_REACHED",
+      "steps": 58,
+      "sim_time": 11.6,
+      "final_dist": 0.39
+    },
+    {
+      "seed": 112,
+      "outcome": "GOAL_REACHED",
+      "steps": 121,
+      "sim_time": 24.2,
+      "final_dist": 0.24
+    },
+    {
+      "seed": 113,
+      "outcome": "GOAL_REACHED",
+      "steps": 112,
+      "sim_time": 22.4,
+      "final_dist": 0.34
+    },
+    {
+      "seed": 114,
+      "outcome": "GOAL_REACHED",
+      "steps": 32,
+      "sim_time": 6.4,
+      "final_dist": 0.35
+    },
+    {
+      "seed": 115,
+      "outcome": "COLLISION",
+      "steps": 75,
+      "sim_time": 15.0,
+      "final_dist": 4.42
+    },
+    {
+      "seed": 116,
+      "outcome": "GOAL_REACHED",
+      "steps": 86,
+      "sim_time": 17.2,
+      "final_dist": 0.25
+    },
+    {
+      "seed": 117,
+      "outcome": "GOAL_REACHED",
+      "steps": 89,
+      "sim_time": 17.8,
+      "final_dist": 0.35
+    },
+    {
+      "seed": 118,
+      "outcome": "GOAL_REACHED",
+      "steps": 85,
+      "sim_time": 17.0,
+      "final_dist": 0.34
+    },
+    {
+      "seed": 119,
+      "outcome": "GOAL_REACHED",
+      "steps": 119,
+      "sim_time": 23.8,
+      "final_dist": 0.08
+    }
+  ]
+}

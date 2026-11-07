@@ -1,0 +1,14 @@
+{
+  "file": "07_irosasl_office_j2_success.mp4",
+  "scenario": "irosasl_office_j2",
+  "prefix": "07",
+  "role": "success",
+  "outcome": "GOAL_REACHED",
+  "seed": 47,
+  "steps": 461,
+  "sim_time": 92.2,
+  "final_dist": 36.95,
+  "duration": 39.5,
+  "frames": 474,
+  "hold_frames": 12
+}

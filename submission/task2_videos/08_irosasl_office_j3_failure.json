@@ -1,0 +1,14 @@
+{
+  "file": "08_irosasl_office_j3_failure.mp4",
+  "scenario": "irosasl_office_j3",
+  "prefix": "08",
+  "role": "failure",
+  "outcome": "COLLISION",
+  "seed": 1,
+  "steps": 102,
+  "sim_time": 20.4,
+  "final_dist": 6.01,
+  "duration": 9.58,
+  "frames": 115,
+  "hold_frames": 12
+}

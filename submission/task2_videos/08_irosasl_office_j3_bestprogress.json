@@ -1,0 +1,14 @@
+{
+  "file": "08_irosasl_office_j3_bestprogress.mp4",
+  "scenario": "irosasl_office_j3",
+  "prefix": "08",
+  "role": "bestprogress",
+  "outcome": "COLLISION",
+  "seed": 32,
+  "steps": 119,
+  "sim_time": 23.8,
+  "final_dist": 2.19,
+  "duration": 11.0,
+  "frames": 132,
+  "hold_frames": 12
+}
