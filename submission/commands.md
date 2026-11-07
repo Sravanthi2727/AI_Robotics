@@ -1,82 +1,102 @@
 # Reproduction Commands Log
 
-This file records the exact reproducible commands for all tasks, benchmarks, tests, scenario recordings, and analysis.
+This document records the exact reproducible commands for all environment setups, tests, benchmarks, scenario recordings, and analyses.
 
 ---
 
-## Phase 1 / Task 1: Environment Setup and Smoke Testing
+## 1. Environment Setup & Smoke Testing (Task 1)
 
-### 1. Minimal Smoke Test (Random Actions, 50 Steps)
+### Automated Setup Script
+Run once from the repository root to create the Python 3.6 environment, compile ASL robotics packages, and establish asset links:
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python scripts_custom/smoke_test.py
+cd "$REPO_ROOT"
+bash setup_env.sh
 ```
 
-### 2. Pretrained Policy Cross-Testing in IANEnv
+### Minimal Verification Smoke Test (Random Actions, 50 Steps)
+Runs 50 steps on both `NavRepTrainEnv` and `IANEnv`:
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python -m navrep.scripts.cross_test_navreptrain_in_ianenv --backend VAE_LSTM --encoding V_ONLY --no-gpu --n 1
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/smoke_test.py
 ```
 
----
-
-## Phase 2 / Task 2: Existing Scenarios Benchmark and Video Recordings
-
-### 1. Full Batch Evaluation and Recording Suite (11 Scenarios)
-Evaluates 20 seeded episodes per scenario (computing success, collision, timeout rates, mean time-to-goal) and writes `submission/task2_videos/metrics_existing.csv`. Generates high-definition telemetry-annotated MP4 recordings for all 11 scenarios in `submission/task2_videos/`:
+### Pretrained Model Verification & Checksums
+Validates file sizes, MD5 checksums, and weights for all 10 pretrained models:
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python scripts_custom/evaluate_and_record_existing.py
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_models_and_checksums.py
 ```
 
-### 2. Individual Scenario Video Recording (CLI)
-Example recording 2 episodes of `navreptrain_train`:
+### Pretrained Policy Cross-Testing in IANEnv (Repo Native Script)
+Runs the upstream cross-testing script on compatible PPO models:
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python scripts_custom/record_scenario.py --scenario navreptrain_train --episodes 2 --seed 42 --fps 12 --out submission/task2_videos/01_navreptrain_train.mp4
-```
-
-Example recording 2 episodes of `irosasl_office_j1`:
-```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python scripts_custom/record_scenario.py --scenario irosasl_office_j1 --episodes 2 --seed 55 --fps 12 --out submission/task2_videos/06_irosasl_office_j1.mp4
-```
-
-Example recording 2 episodes of `irosunity_scene_map1`:
-```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python scripts_custom/record_scenario.py --scenario irosunity_scene_map1 --episodes 2 --seed 77 --fps 12 --out submission/task2_videos/09_irosunity_scene_map1.mp4
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cross_test_navreptrain_in_ianenv.py \
+    --backend VAE_LSTM --encoding VM --no-gpu --dry-run --n 11
 ```
 
 ---
 
-## Phase 3 / Task 3: Custom Scenarios, Benchmark, and Crowd Density Sweep
+## 2. Existing Scenarios Benchmark and Video Recordings (Task 2)
 
-### 1. Unit Test Suite Execution
-Runs test cases verifying registry loading, custom environment instantiation, step/reset cycle, and observation/action space alignment across all 6 scenarios and difficulty ladder tiers:
+### Full Batch Evaluation and Recording Suite (11 Scenarios)
+Evaluates 20 seeded episodes per scenario (seeds 100-119), finds representative success and failure seeds, records verified 640x640 H.264 MP4 videos with dynamic robot-following camera and PiP minimap, and enforces the frame quality gate (asserting std >= 15.0 at 10%, 25%, 50%, 75%, and 90% timestamps):
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python -m unittest tests/test_custom_scenarios.py
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/evaluate_and_record_existing.py
+```
+Outputs produced:
+- `submission/task2_videos/metrics_existing.csv`
+- `submission/task2_videos/VIDEO_INDEX.md`
+- `submission/task2_videos/<NN>_<scenario>_success.mp4`
+- `submission/task2_videos/<NN>_<scenario>_failure.mp4`
+
+### Individual Scenario Video Recording CLI
+Records an individual scenario episode with custom seed, backend, and camera overlay:
+```bash
+# Example 1: irosasl1
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
+    --scenario irosasl1 --seed 42 --backend VAE_LSTM --encoding VM --fps 12 \
+    --out submission/task2_videos/03_irosasl1_test.mp4
+
+# Example 2: navreptrain_train
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
+    --scenario navreptrain_train --seed 1 --backend VAE_LSTM --encoding VM --fps 12 \
+    --out submission/task2_videos/01_navreptrain_train_test.mp4
+
+# Example 3: irosunity_scene_map1
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
+    --scenario irosunity_scene_map1 --seed 14 --backend VAE_LSTM --encoding VM --fps 12 \
+    --out submission/task2_videos/09_irosunity_scene_map1_test.mp4
 ```
 
-### 2. Full Batch Custom Evaluation, Recording & Density Analysis Suite
-Evaluates 20 seeded episodes per scenario/difficulty combination, records 12 MP4 videos (>5s duration each) to `submission/task3_custom/videos/`, outputs `submission/task3_custom/metrics_custom.csv`, and executes the parametric crowd density stress test sweep generating `submission/task3_custom/analysis/density_vs_success.png`:
+---
+
+## 3. Custom Scenarios, Benchmark, and Crowd Density Sweep (Task 3)
+
+### Unit Test Suite Execution
+Runs test cases verifying registry loading, custom environment instantiation, step/reset cycles, and observation/action space alignment across all 6 custom scenarios:
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python scripts_custom/evaluate_and_record_custom.py
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m unittest tests/test_custom_scenarios.py
 ```
 
-### 3. Custom Scenario CLI (`navrep_custom.run_custom`)
-
-#### Running an Interactive / Benchmark Evaluation of a Specific Scenario:
+### Full Batch Custom Evaluation, Recording & Density Analysis Suite
+Evaluates 20 seeded episodes per scenario/difficulty combination, records MP4 videos to `submission/task3_custom/videos/`, outputs `submission/task3_custom/metrics_custom.csv`, and executes the parametric crowd density stress test sweep generating `submission/task3_custom/analysis/density_vs_success.png`:
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python -m navrep_custom.run_custom --scenario mallmate --difficulty MEDIUM --episodes 5
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/evaluate_and_record_custom.py
 ```
 
-#### Recording Video for a Specific Scenario & Difficulty:
+### Custom Scenario CLI (`navrep_custom.run_custom`)
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python -m navrep_custom.run_custom --scenario mallmate --difficulty MEDIUM --episodes 2 --record submission/task3_custom/videos/01_mallmate_medium.mp4
-```
+# Run interactive benchmark evaluation:
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
+    --scenario mallmate --difficulty MEDIUM --episodes 5
 
-#### Exporting 2D Top-Down Blueprint Map Previews:
-```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python -m navrep_custom.run_custom --scenario mallmate --export-map submission/task3_custom/maps/mallmate.png
-```
-*(Supports `--scenario` options: `mallmate`, `medirunner`, `kiranakart`, `diwalibazaar`, `railwaystation`, `firedrill`)*
+# Record video:
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
+    --scenario mallmate --difficulty MEDIUM --episodes 2 --record submission/task3_custom/videos/01_mallmate_medium.mp4
 
-#### Running the Parametric Crowd Density Sweep:
-```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib /home/sravanthi/Desktop/navrep/env/bin/python -m navrep_custom.run_custom --density-sweep diwalibazaar --out-plot submission/task3_custom/analysis/density_vs_success.png
+# Export 2D blueprint map preview:
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
+    --scenario mallmate --export-map submission/task3_custom/maps/mallmate.png
+
+# Parametric crowd density sweep:
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep_custom.run_custom \
+    --density-sweep diwalibazaar --out-plot submission/task3_custom/analysis/density_vs_success.png
 ```

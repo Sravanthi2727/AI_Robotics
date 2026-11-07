@@ -1,19 +1,32 @@
-# Task 1: NavRep Setup, Audit, and Execution Report
+# Task 1: NavRep Environment Setup, Audit, and Execution Report
 
-## 1. Overview of the Project and the Paper
-NavRep (ETH Zurich Autonomous Systems Lab) investigates unsupervised representation learning for reinforcement learning in 2D simulated robot navigation among dynamic human crowds. Rather than feeding raw high-dimensional lidar point clouds directly into policy networks, NavRep modularizes navigation into representation learning (world models) and controller training (C-module). Unsupervised architectures—including Variational Autoencoders (ConvVAE 2D and 1D), Recurrent Neural Networks (MDN-RNN / LSTM), and autoregressive Transformers (GPT / minGPT)—compress temporal lidar streams into compact latent representations \(z\) and dynamic belief states \(h\). These latent representations are then provided to Proximal Policy Optimization (PPO2) controllers trained across simulated crowd environments (such as SOADRL CrowdSim and ASL Pepper 2D / IANEnv). The paper demonstrates that self-supervised world representations yield superior sample efficiency, generalization, and transferability across crowd navigation benchmarks compared to end-to-end RL baselines.
+**Verified on**: November 7, 2026 (Ubuntu 24.04 LTS x86_64, Python 3.6.15)
 
-## 2. Operating System and Hardware
-- **Operating System**: Linux (Ubuntu 24.04.4 LTS, kernel `6.17.0-14-generic #14~24.04.1-Ubuntu x86_64`)
-- **CPU**: 12th Gen Intel(R) Core(TM) i5-12450H (4 vCPUs allocated, 2.50 GHz, AVX2 / FMA supported)
+---
+
+## 1. Overview of the Project and Paper
+ETH Zurich's **NavRep** (*Learning to Navigate in Crowds with Recurrent World Models*) investigates self-supervised representation learning for reinforcement learning in dynamic robot navigation. Rather than mapping high-dimensional raw lidar streams directly to motor commands with end-to-end RL, NavRep decouples perception into world models and navigation policies:
+1. **Perception & World Models (V & M modules)**:
+   - **V-Model (ConvVAE 2D / 1D)**: Compresses raw 1080-beam lidar scans into a 32- or 64-dimensional latent state $z$.
+   - **M-Model (MDN-RNN / LSTM & GPT)**: Projects sequences of latent codes and robot actions forward in time, estimating dynamic transitions and maintaining a recurrent belief state $h$ (512 dimensions).
+2. **Controller (C-module)**:
+   - A Proximal Policy Optimization (PPO2) policy receives the compressed state $(z, h, \text{robot\_state})$ to predict velocity commands $(v_x, v_y, \omega)$.
+3. **Key Finding**:
+   - Temporal world model representations ($VM$) yield higher sample efficiency and significantly outperform end-to-end controllers, but direct zero-shot transfer from 2D training simulators (`NavRepTrainEnv`) to realistic robotic environments (`IANEnv` / ASL Pepper / Unity) encounters a substantial domain gap, highlighting the critical role of recurrent memory and domain calibration.
+
+---
+
+## 2. System Hardware and Environment
+- **Operating System**: Linux (Ubuntu 24.04.4 LTS, kernel `6.17.0-14-generic x86_64`)
+- **CPU**: 12th Gen Intel(R) Core(TM) i5-12450H (4 vCPUs allocated, 2.50 GHz, AVX2 / FMA support)
 - **RAM**: 7.8 GiB total (~3.8 GiB available)
-- **GPU**: Headless CPU execution (`nvidia-smi` not attached; CPU-only execution verified)
+- **GPU / Acceleration**: Headless CPU execution (`--no-gpu`; all models run on CPU)
 - **Architecture**: x86_64 Little Endian
 
-## 3. Software Requirements and Key Dependencies
-NavRep was authored for Python 3.6, TensorFlow 1.13.2 / 1.15.x, Stable-Baselines 2.10.0, Gym 0.15.7, Pyglet 1.5.0/1.5.22, PyTorch 1.6.0, and custom C++/Cython robotic libraries from ETH Zurich ASL.
+---
 
-Key pinned versions (from `pip freeze` in `submission/pip_freeze.txt`):
+## 3. Pinned Dependency Versions
+All versions match `submission/pip_freeze.txt` exactly:
 - `python==3.6.15` (Conda-forge)
 - `tensorflow==1.13.2`
 - `torch==1.6.0+cpu`, `torchvision==0.7.0+cpu`
@@ -29,100 +42,86 @@ Key pinned versions (from `pip freeze` in `submission/pip_freeze.txt`):
 - `Cython==0.29.28`
 - `numba==0.53.1`
 - `pandas==1.1.0`
-- `imageio==2.15.0`, `imageio-ffmpeg==0.5.1`
-- `pyIAN==0.0.3`
-- `asl-pepper-2d-sim==0.0.5`
-- `soadrl-crowdnav==0.0.3`
-- `pyniel==0.2`
-- `pymap2d==0.1.15`
-- `pylidar2d==0.1`
-- `pyrvo2-danieldugas==0.0.2`
-- `pyrangelibc-danieldugas==0.0.2`
+- `imageio==2.15.0`, `imageio-ffmpeg==0.5.1`, `importlib_resources`
+- `pyIAN==0.0.3`, `asl-pepper-2d-sim==0.0.5`, `soadrl-crowdnav==0.0.3`
+- `pyniel==0.2`, `pymap2d==0.1.15`, `pylidar2d==0.1`
+- `pyrvo2-danieldugas==0.0.2`, `pyrangelibc-danieldugas==0.0.2`
 - `rospy==1.15.11`, `rosbag==1.15.11`, `tf==1.12.1.post3`, `tf2-ros==0.6.5`
 
-## 4. Copy-Pasteable Installation Steps
+---
 
-To reproduce this exact working environment from scratch without requiring root or sudo privileges:
+## 4. Automated Installation (`setup_env.sh`)
+
+A single standalone setup script [`setup_env.sh`](file://setup_env.sh) automates the complete installation from scratch. It requires no root privileges:
 
 ```bash
-# 1. Navigate to the repository root
-cd /home/sravanthi/Desktop/navrep
+# 1. Clone repository (or enter repository root)
+cd "$REPO_ROOT"
 
-# 2. Download standalone micromamba binary for isolated user-space environment management
-mkdir -p bin
-curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xj -C bin --strip-components=1 bin/micromamba
+# 2. Run automated environment setup
+bash setup_env.sh
 
-# 3. Create isolated Python 3.6 environment
-./bin/micromamba create -y -p ./env -c conda-forge python=3.6 pip
-
-# 4. Install Cython and NumPy first (required for compiling C/C++ extensions)
-./env/bin/pip install numpy==1.19.5 Cython==0.29.28
-
-# 5. Install PyTorch CPU build from PyTorch wheel index
-./env/bin/pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-
-# 6. Install pinned opencv-python wheel (avoids compiling unpinned OpenCV C++ from source)
-./env/bin/pip install opencv-python==4.5.5.64
-
-# 7. Install core ML and RL dependencies with pinned Gym 0.15.7 and Cloudpickle 1.6.0
-./env/bin/pip install "tensorflow==1.13.2" "keras==2.3.1" "stable-baselines==2.10.0" "cloudpickle==1.6.0" "gym==0.15.7" "pandas==1.1.0" "scipy==1.5.4" "matplotlib==3.3.4"
-
-# 8. Install Pyglet 1.5.x, rendering, video recording, and ROS utility packages
-./env/bin/pip install "pyglet==1.5.22" "numba==0.53.1" "rospkg" "catkin_pkg" "rich" "tqdm" "imageio" "imageio-ffmpeg"
-
-# 9. Install ETH Zurich ASL robotics simulation packages
-./env/bin/pip install "pyIAN==0.0.3" "asl-pepper-2d-sim==0.0.5" "soadrl-crowdnav==0.0.3" "pyniel==0.2" "pymap2d==0.1.15" "pylidar2d==0.1" "pyrvo2-danieldugas==0.0.2"
-./env/bin/pip install --no-build-isolation "pyrangelibc-danieldugas==0.0.2"
-
-# 10. Install dummy ROS packages for rospypi compatibility
-./env/bin/pip install --extra-index-url https://rospypi.github.io/simple/ rospy rosbag tf tf2_ros
-
-# 11. Install NavRep in editable development mode
-./env/bin/pip install --no-build-isolation -e .
-
-# 12. Copy bundled external modules into site-packages (required by ASL state estimator)
-cp -r external/frame_msgs env/lib/python3.6/site-packages/
-cp -r external/tf_bag env/lib/python3.6/site-packages/
-
-# 13. Set HOME and maps symlinks (so ~/navrep and ~/maps resolve to repo paths)
-ln -sf $(pwd) ~/navrep
-ln -sf $(pwd)/maps ~/maps
+# 3. Activate environment
+export PATH="$REPO_ROOT/env/bin:$PATH"
+export MPLCONFIGDIR=/tmp/matplotlib
 ```
 
-## 5. Modifications Made to Original Code or Config
-In accordance with Ground Rule 3, **ZERO original repository files were modified**. All behavior and compatibility fixes were achieved through pinned environment specification, site-packages module placement, and dedicated wrappers in `scripts_custom/` and `navrep_custom/`.
+### What `setup_env.sh` does step-by-step:
+1. Downloads standalone `micromamba` into `./bin/` (isolated user-space package manager).
+2. Creates `./env` with Python 3.6.15.
+3. Installs `numpy==1.19.5` and `Cython==0.29.28` first (required to build ASL Cython extensions).
+4. Installs the official CPU build of PyTorch (`torch==1.6.0+cpu`).
+5. Installs pre-built `opencv-python==4.5.5.64` wheel.
+6. Installs core ML stack: `tensorflow==1.13.2`, `keras==2.3.1`, `stable-baselines==2.10.0`, `cloudpickle==1.6.0`, `gym==0.15.7`, and `pyglet==1.5.0`.
+7. Installs ETH Zurich ASL robotics libraries (`pyIAN`, `asl-pepper-2d-sim`, `soadrl-crowdnav`, `pyniel`, `pymap2d`, `pylidar2d`, `pyrvo2-danieldugas`, `pyrangelibc-danieldugas`).
+8. Installs rospypi shims (`rospy`, `rosbag`, `tf`, `tf2_ros`) and NavRep in editable development mode (`pip install --no-build-isolation -e .`).
+9. Copies bundled `external/frame_msgs` and `external/tf_bag` into site-packages.
+10. Establishes the `~/navrep` and `~/maps` asset symlinks.
+11. Verifies Xvfb, FFmpeg, and executes the smoke test.
 
-Refer to `docs/CHANGES_LOG.md` for the audit trail.
+---
 
-## 6. Challenges and Solutions Table
+## 5. Model Asset Symlinks Convention
+The upstream NavRep codebase hardcodes asset lookups using `os.path.expanduser("~/navrep/...")` and `os.path.expanduser("~/maps/...")`.
 
-| Error | Root Cause | Fix Applied |
-|---|---|---|
-| `sudo: The "no new privileges" flag is set` | Container sandbox prohibits privilege escalation; sudo is disallowed. | Installed user-space micromamba environment inside `./env` without needing root. |
-| Prolonged stall / network throttle downloading 513MB PyPI `torch==1.6.0` wheel | PyPI default package bundles CUDA 10 binaries; PyPI server was severely throttled for large binary downloads. | Switched to official PyTorch CPU wheel (`torch==1.6.0+cpu`) from `download.pytorch.org`, downloading at >10 MB/s. |
-| `Building wheel for opencv-python (pyproject.toml) ...` | `stable-baselines` pulled unpinned `opencv-python`, which defaulted to modern PyPI release lacking Python 3.6 wheels and triggered a 40-minute C++ compilation. | Pinned and installed `opencv-python==4.5.5.64` pre-built wheel before installing `stable-baselines`. |
-| `Syntax error in simple statement list (print "...")` in `RangeLibc.pyx` | Pip build isolation pulled modern Cython which defaults to Python 3 syntax, rejecting Python 2 print syntax. | Installed `pyrangelibc-danieldugas` with `--no-build-isolation` to use the pinned environment `Cython==0.29.28`. |
-| `ModuleNotFoundError: No module named 'frame_msgs'` | `setup.py` maps `package_dir={'frame_msgs': ...}` which `pip install -e` fails to link into site-packages. | Copied `external/frame_msgs` and `external/tf_bag` into `env/lib/python3.6/site-packages/`. |
-| `FileNotFoundError: No such file or directory: '~/navrep/models/gym'` | NavRep scripts hardcode `os.path.expanduser("~/navrep/models/gym")`. | Provided `HOME=/home/sravanthi/Desktop` (or symlinked `~/navrep -> repo`), ensuring paths resolve correctly. |
-| `AttributeError: 'Box' object has no attribute '_shape'` | PPO2 model policies were serialized with Gym 0.15.7; Gym >=0.20.0 removed `_shape` attribute. | Downgraded gym to `gym==0.15.7`. |
-| `AttributeError: module 'types' has no attribute 'CellType'` | `cloudpickle 1.2.2` accessed `types.CellType` which was introduced in Python 3.8. | Upgraded cloudpickle to `cloudpickle==1.6.0` (as specified in `requirements.txt`). |
-| `ModuleNotFoundError: No module named 'importlib.resources'` in `imageio_ffmpeg` | `importlib.resources` was added in Python 3.7; Python 3.6 uses standalone `importlib_resources`. | Dynamically shimmed `sys.modules['importlib.resources'] = importlib_resources` in video recording pipelines, allowing bundled ffmpeg to encode native H.264 MP4s. |
-| `TypeError: unsupported operand type(s) for -: 'list' and 'float'` | NumPy ragged array conversion when obstacle polygons have heterogeneous vertex counts (e.g. 8-vertex octagonal pillars vs 4-vertex kiosks) caused `reshape((-1, 2))` to return an object array of lists. | Refactored bounding box calculation in recorder and obstacle adder in custom envs to iteratively extract `(x, y)` float tuples without assuming homogeneous vertex counts. |
-
-Refer to `docs/CHALLENGES_LOG.md` for full timestamps and details.
-
-## 7. How to Run the Repository and Simulation Scenarios
-
-### Smoke Test
-Runs a 50-step random-action rollout on both `NavRepTrainEnv` and `IANEnv`:
+To ensure consistent resolution across all environments (including systems with read-only user directories):
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/smoke_test.py
+# Ensure standard asset symlinks exist in your active HOME
+mkdir -p "$HOME/navrep"
+ln -sfn "$REPO_ROOT/models" "$HOME/navrep/models"
+ln -sfn "$REPO_ROOT/maps" "$HOME/maps"
+```
+*Note: If executing on a shared computing cluster with a restricted or read-only home directory, export `HOME=/tmp/home` prior to creating the symlinks.*
+
+---
+
+## 6. Challenges and Solutions
+
+| # | Issue Encountered | Root Cause | Engineering Solution |
+|---|---|---|---|
+| 1 | Lack of root/sudo permissions for system packages | Standard machine without root privileges. | Deployed user-space `micromamba` binary into `$REPO_ROOT/bin/` to manage an isolated Python 3.6 environment. |
+| 2 | Heavy network stall downloading default PyPI PyTorch | Default PyPI `torch==1.6.0` pulls 513 MB CUDA 10 binaries. | Pointed pip to official PyTorch CPU wheel (`torch==1.6.0+cpu` from `download.pytorch.org`), reducing download size to ~120 MB. |
+| 3 | 40-minute source compilation for OpenCV | Modern PyPI releases lack Python 3.6 wheels, falling back to C++ source build. | Pinned and installed `opencv-python==4.5.5.64` pre-built binary wheel before installing dependencies. |
+| 4 | `Syntax error in simple statement list (print "...")` in `RangeLibc.pyx` | Pip build isolation pulled modern Cython, rejecting Python 2 print statements in legacy Cython code. | Installed with `--no-build-isolation` to ensure the environment's pinned `Cython==0.29.28` was utilized. |
+| 5 | `ModuleNotFoundError: No module named 'frame_msgs'` | `setup.py` maps `package_dir={'frame_msgs': ...}` which editable pip installs fail to link. | Explicitly copied `external/frame_msgs` and `external/tf_bag` directly into the environment's `site-packages`. |
+| 6 | Serialized policy compatibility in Gym & Cloudpickle | Models serialized with Gym 0.15.7 failed on Gym >= 0.20; Cloudpickle 1.2.2 failed on `types.CellType`. | Pinned `gym==0.15.7` and `cloudpickle==1.6.0`. |
+| 7 | `ModuleNotFoundError: No module named 'importlib.resources'` in `imageio_ffmpeg` | `importlib.resources` is Python 3.7+; Python 3.6 requires `importlib_resources`. | Dynamically mapped `sys.modules['importlib.resources'] = importlib_resources` in recording scripts. |
+| 8 | IANEnv rendering bounds inverted & black screen | `pymap2d.get_extent_xy()` returns `[xmin, xmax, ymin, ymax]`; unpacking as `x_min, y_min, ...` inverted Y-span. Also, polygon index 0 is the bounding box. | Corrected coordinate unpacking, added dynamic robot-following 20m x 20m camera, PiP overview map, and laser points. |
+| 9 | Robot stuck in place in initial recordings | Evaluating V_ONLY policy in deterministic mode led to local minima in symmetric arenas. | Upgraded evaluation to `VAE_LSTM VM` (`navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_ckpt.zip`), enabling recurrent temporal memory ($h$). |
+
+---
+
+## 7. How to Run Benchmarks and Reproduce Results
+
+### 1. Verification Smoke Test
+Executes a 50-step rollout across both `NavRepTrainEnv` and `IANEnv`:
+```bash
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/smoke_test.py
 ```
 **Expected Output**:
 ```
 === NavRep Smoke Test ===
 Python version: 3.6.15 ...
-NavRep package path: /home/sravanthi/Desktop/navrep/navrep/__init__.py
 [1/2] Initializing NavRepTrainEnv(silent=True)...
 Reset successful. Observation shape: [(1080,), (5,)]
 Running 50 random action steps...
@@ -134,26 +133,46 @@ IANEnv completed 50 steps successfully.
 === Smoke test PASSED cleanly! ===
 ```
 
-### Pretrained Policy Evaluation (Cross-Test)
-Cross-tests the pretrained PPO2 policies (using ConvVAE representation) in IANEnv:
+### 2. Pretrained Policy Cross-Testing (Repo's Native Script)
+Runs the original cross-test script on compatible PPO models:
 ```bash
-HOME=/home/sravanthi/Desktop MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep.scripts.cross_test_navreptrain_in_ianenv --backend VAE_LSTM --encoding V_ONLY --no-gpu --n 1
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cross_test_navreptrain_in_ianenv.py \
+    --backend VAE_LSTM --encoding VM --no-gpu --dry-run --n 11
 ```
 **Expected Output**:
-Loads compatible models from `models/gym/`, loads world model from `models/V/navreptrainvae.json`, and evaluates across IANEnv scenarios with progress bars.
+```
+Compatible C models:
+navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_ckpt.zip
+...
+Cross Testing: Episode 0 - nan: 0% ...
+Cross Testing: Episode 4 - 0.25: 36% ...
+```
 
-## 8. Troubleshooting Tips
-1. **Always export environment variables**:
-   ```bash
-   export HOME=/home/sravanthi/Desktop
-   export MPLCONFIGDIR=/tmp/matplotlib
-   ```
-   This prevents Matplotlib directory errors and ensures `~/navrep` and `~/maps` paths resolve properly.
-2. **Offscreen Rendering / Headless mode**:
-   On headless servers, rendering requires Xvfb or Pyglet offscreen windowing:
-   ```bash
-   xvfb-run -a -s "-screen 0 1024x768x24" ./env/bin/python ...
-   ```
-3. **CPU Execution**:
-   Always pass `--no-gpu` when executing on systems without CUDA support to prevent TensorFlow CUDA init warnings.
+### 3. Full Benchmark and Video Recording (Task 2 Deliverables)
+Evaluates 20 seeded episodes per scenario (seeds 100-119), searches seeds for representative success and failure episodes, records H.264 MP4 videos with telemetry HUD, and enforces the frame quality gate:
+```bash
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/evaluate_and_record_existing.py
+```
+Outputs produced:
+- `submission/task2_videos/metrics_existing.csv`: Aggregated benchmark metrics across all 11 scenarios.
+- `submission/task2_videos/VIDEO_INDEX.md`: Complete video manifest with seeds, durations, and observations.
+- `submission/task2_videos/<NN>_<scenario>_success.mp4`: Verified successful (or best-progress) runs.
+- `submission/task2_videos/<NN>_<scenario>_failure.mp4`: Verified honest collisions or timeout runs.
 
+### 4. Single Scenario Recording CLI
+To record an individual scenario with custom parameters:
+```bash
+MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
+    --scenario irosasl1 \
+    --seed 42 \
+    --backend VAE_LSTM \
+    --encoding VM \
+    --fps 12 \
+    --out submission/task2_videos/03_irosasl1_test.mp4
+```
+
+---
+
+## 8. Display and Video Encoding Notes
+- **Headless Display**: In environments without an active X server, software vector rendering is natively handled through OpenCV buffer compositing directly to image arrays, eliminating X11/Xvfb display server dependencies.
+- **Video Encoding**: MP4 encoding uses `imageio` with the pinned `imageio-ffmpeg` binary backend, producing standard H.264 (`yuv420p`) video streams playable in any web browser and media player.
