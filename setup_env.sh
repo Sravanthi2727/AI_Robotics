@@ -92,6 +92,11 @@ mkdir -p "$HOME/navrep" 2>/dev/null || true
 ln -sfn "$REPO_ROOT/models" "$HOME/navrep/models" 2>/dev/null || true
 ln -sfn "$REPO_ROOT/maps" "$HOME/maps" 2>/dev/null || true
 
+# Also create symlinks in /tmp/home for execution environments using HOME=/tmp/home
+mkdir -p /tmp/home/navrep 2>/dev/null || true
+ln -sfn "$REPO_ROOT/models" /tmp/home/navrep/models 2>/dev/null || true
+ln -sfn "$REPO_ROOT/maps" /tmp/home/maps 2>/dev/null || true
+
 # Also create local Desktop links if running inside sandboxed user homes
 if [ "$HOME" != "$REPO_ROOT/.." ]; then
     mkdir -p "$(dirname "$REPO_ROOT")/navrep" 2>/dev/null || true

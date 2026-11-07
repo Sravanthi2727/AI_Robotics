@@ -5,14 +5,14 @@
 ---
 
 ## 1. Overview of the Project and Paper
-ETH Zurich's **NavRep** (*Learning to Navigate in Crowds with Recurrent World Models*) investigates self-supervised representation learning for reinforcement learning in dynamic robot navigation. Rather than mapping high-dimensional raw lidar streams directly to motor commands with end-to-end RL, NavRep decouples perception into world models and navigation policies:
+ETH Zurich's **NavRep** (*NavRep: Unsupervised Representations for Reinforcement Learning of Robot Navigation in Dynamic Human Environments*) investigates self-supervised representation learning for reinforcement learning in dynamic robot navigation. Rather than mapping high-dimensional raw lidar streams directly to motor commands with end-to-end RL, NavRep decouples perception into world models and navigation policies:
 1. **Perception & World Models (V & M modules)**:
    - **V-Model (ConvVAE 2D / 1D)**: Compresses raw 1080-beam lidar scans into a 32- or 64-dimensional latent state $z$.
    - **M-Model (MDN-RNN / LSTM & GPT)**: Projects sequences of latent codes and robot actions forward in time, estimating dynamic transitions and maintaining a recurrent belief state $h$ (512 dimensions).
 2. **Controller (C-module)**:
    - A Proximal Policy Optimization (PPO2) policy receives the compressed state $(z, h, \text{robot\_state})$ to predict velocity commands $(v_x, v_y, \omega)$.
 3. **Key Finding**:
-   - Temporal world model representations ($VM$) yield higher sample efficiency and significantly outperform end-to-end controllers, but direct zero-shot transfer from 2D training simulators (`NavRepTrainEnv`) to realistic robotic environments (`IANEnv` / ASL Pepper / Unity) encounters a substantial domain gap, highlighting the critical role of recurrent memory and domain calibration.
+   - In our zero-shot tests, the VM policy reached the goal in 45–65% of episodes in the NavRepTrain train/test environments and 0–50% in the IAN environments (see `metrics_existing.csv`); a sim-to-sim domain gap is a likely, untested explanation for the lower transfer performance observed in IAN environments.
 
 ---
 
@@ -26,11 +26,11 @@ ETH Zurich's **NavRep** (*Learning to Navigate in Crowds with Recurrent World Mo
 ---
 
 ## 3. Pinned Dependency Versions
-All versions match `submission/pip_freeze.txt` exactly:
-- `python==3.6.15` (Conda-forge)
+Key dependency versions verified against `submission/pip_freeze.txt` (running on Python 3.6.15 Conda-forge runtime):
+- `python==3.6.15` (Conda-forge runtime)
 - `tensorflow==1.13.2`
 - `torch==1.6.0+cpu`, `torchvision==0.7.0+cpu`
-- `keras==2.3.1`
+- `Keras==2.3.1`
 - `stable-baselines==2.10.0`
 - `gym==0.15.7`
 - `cloudpickle==1.6.0`
@@ -42,7 +42,8 @@ All versions match `submission/pip_freeze.txt` exactly:
 - `Cython==0.29.28`
 - `numba==0.53.1`
 - `pandas==1.1.0`
-- `imageio==2.15.0`, `imageio-ffmpeg==0.5.1`, `importlib_resources`
+- `imageio==2.15.0`, `imageio-ffmpeg==0.5.1`
+- `importlib-resources==5.4.0`
 - `pyIAN==0.0.3`, `asl-pepper-2d-sim==0.0.5`, `soadrl-crowdnav==0.0.3`
 - `pyniel==0.2`, `pymap2d==0.1.15`, `pylidar2d==0.1`
 - `pyrvo2-danieldugas==0.0.2`, `pyrangelibc-danieldugas==0.0.2`
@@ -52,11 +53,12 @@ All versions match `submission/pip_freeze.txt` exactly:
 
 ## 4. Automated Installation (`setup_env.sh`)
 
-A single standalone setup script [`setup_env.sh`](file://setup_env.sh) automates the complete installation from scratch. It requires no root privileges:
+A single standalone setup script [`setup_env.sh`](setup_env.sh) automates the complete installation from scratch. It requires no root privileges:
 
 ```bash
-# 1. Clone repository (or enter repository root)
-cd "$REPO_ROOT"
+# 1. Clone repository and enter repository root
+cd <path-to-cloned-repo>
+export REPO_ROOT=$(pwd)
 
 # 2. Run automated environment setup
 bash setup_env.sh
@@ -76,26 +78,36 @@ export MPLCONFIGDIR=/tmp/matplotlib
 7. Installs ETH Zurich ASL robotics libraries (`pyIAN`, `asl-pepper-2d-sim`, `soadrl-crowdnav`, `pyniel`, `pymap2d`, `pylidar2d`, `pyrvo2-danieldugas`, `pyrangelibc-danieldugas`).
 8. Installs rospypi shims (`rospy`, `rosbag`, `tf`, `tf2_ros`) and NavRep in editable development mode (`pip install --no-build-isolation -e .`).
 9. Copies bundled `external/frame_msgs` and `external/tf_bag` into site-packages.
-10. Establishes the `~/navrep` and `~/maps` asset symlinks.
-11. Verifies Xvfb, FFmpeg, and executes the smoke test.
+10. Establishes the `~/navrep/models`, `~/maps`, `/tmp/home/navrep/models`, and `/tmp/home/maps` asset symlinks.
+11. Checks FFmpeg and Xvfb availability (falls back to bundled `imageio-ffmpeg` binary and software offscreen rendering if absent, so Xvfb is not required), and executes the smoke test.
 
 ---
 
 ## 5. Model Asset Symlinks Convention
 The upstream NavRep codebase hardcodes asset lookups using `os.path.expanduser("~/navrep/...")` and `os.path.expanduser("~/maps/...")`.
 
-To ensure consistent resolution across all environments (including systems with read-only user directories):
+To ensure consistent resolution across all environments (including systems with read-only user directories or execution under `HOME=/tmp/home`):
 ```bash
 # Ensure standard asset symlinks exist in your active HOME
 mkdir -p "$HOME/navrep"
 ln -sfn "$REPO_ROOT/models" "$HOME/navrep/models"
 ln -sfn "$REPO_ROOT/maps" "$HOME/maps"
+
+# Also create symlinks in /tmp/home for execution environments using HOME=/tmp/home (handled automatically by setup_env.sh)
+mkdir -p /tmp/home/navrep
+ln -sfn "$REPO_ROOT/models" /tmp/home/navrep/models
+ln -sfn "$REPO_ROOT/maps" /tmp/home/maps
 ```
-*Note: If executing on a shared computing cluster with a restricted or read-only home directory, export `HOME=/tmp/home` prior to creating the symlinks.*
 
 ---
 
-## 6. Challenges and Solutions
+## 6. Modifications to Original Code or Configuration
+As verified by `git diff --stat f824612 HEAD -- navrep crings external maps` (where `f824612` is the original upstream commit) and documented in `docs/CHANGES_LOG.md`:
+**No original NavRep source files were modified.** Compatibility came entirely from pinned package versions, copying `external/frame_msgs` and `external/tf_bag` into site-packages, the `~/navrep/models` and `~/maps` symlinks, and new files only (`scripts_custom/`, `navrep_custom/`, `tests/`, `docs/`, `submission/`).
+
+---
+
+## 7. Challenges and Solutions
 
 | # | Issue Encountered | Root Cause | Engineering Solution |
 |---|---|---|---|
@@ -114,27 +126,37 @@ ln -sfn "$REPO_ROOT/maps" "$HOME/maps"
 
 ---
 
-## 7. How to Run Benchmarks and Reproduce Results
+## 8. How to Run Benchmarks and Reproduce Results
 
-### 1. Verification Smoke Test
+### 8.1 Verification Smoke Test
 Executes a 50-step rollout across both `NavRepTrainEnv` and `IANEnv`:
 ```bash
 HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/smoke_test.py
 ```
 
-### 2. Pretrained Policy Cross-Testing (Repo's Native Script)
+### 8.2 Pretrained Policy Cross-Testing (Repo's Native Script)
 Runs the original cross-test script on compatible PPO models:
 ```bash
-HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python navrep/scripts/cross_test_navreptrain_in_ianenv.py \
-    --backend VAE_LSTM --encoding VM --no-gpu --dry-run --n 11
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m navrep.scripts.cross_test_navreptrain_in_ianenv --backend VAE_LSTM --encoding VM --no-gpu --n 20
 ```
 
-### 3. Full Benchmark and Video Recording (Task 2 Deliverables)
+### 8.3 Full Benchmark and Video Recording (Task 2 Deliverables)
 Evaluates 20 seeded episodes per scenario (seeds 100-119) under native/calibrated limits (175 steps for NavRepTrainEnv, 500 steps for IANEnv), conducts 60-seed sweeps, records 22 videos with dynamic robot-following camera, laser points, PiP minimap, and telemetry HUD, and validates quality gates:
+
 ```bash
-# Automated quality gate verification:
+# 1. Run full benchmark and video recording for all 11 scenarios:
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/remediate_and_record.py
+
+# 2. Or run a single scenario benchmark and recording:
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/remediate_and_record.py --scenario irosasl1
+
+# 3. Re-compile metrics_existing.csv and VIDEO_INDEX.md from existing results:
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/remediate_and_record.py --compile-only
+
+# 4. Automated quality gate verification:
 HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/verify_videos.py
 ```
+
 Outputs produced:
 - `submission/task2_videos/metrics_existing.csv`: Aggregated benchmark metrics with `max_steps`, `repo_script_success_pct` (numeric), `repo_script_max_steps`, and `repo_script_episodes` columns.
 - `submission/task2_videos/VIDEO_INDEX.md`: Generated strictly from sidecar JSON files in `submission/task2_videos/metadata/`.
@@ -147,18 +169,18 @@ Success videos come from a 60-seed sweep (seeds 0-59), benchmark rates come from
 **Programmatic Quality Gate (`scripts_custom/verify_videos.py`)**:
 The quality gate programmatically checks HUD status badge color and sidecar/filename consistency across all 22 videos. For each video, it extracts the final frame, detects the HUD status badge by pixel color (green = `GOAL REACHED`, orange = `TIMEOUT`, red = `COLLISION`), and asserts strict consistency between the HUD badge, sidecar outcome, and filename suffix. It also verifies that the robot (cyan), goal (green ring), and obstacles (light grey) are actively present in frames at 25%, 50%, and 75%, enforces frozen frame bounds ($\le 20$), and verifies minimum duration ($\ge 8.0\text{ s}$ for failure/bestprogress).
 
-### 4. Benchmark Methodology and Measured Comparison with Repo Script
+### 8.4 Benchmark Methodology and Measured Comparison with Repo Script
 The benchmark results reported in `metrics_existing.csv` compare our evaluation against the ETH Zurich repository's reference script `navrep/scripts/cross_test_navreptrain_in_ianenv.py`. Differences in measured numbers are governed strictly by the following measured code facts:
 1. **Backend and Encoding (`backend`, `encoding`)**: Both evaluations use identical architecture and pretrained weights: `--backend VAE_LSTM --encoding VM` (`navreptrainencodedenv_2020_09_23__09_48_22_PPO_VAE_LSTM_VM_V32M512_ckpt.zip`).
-2. **Episode Count (`episodes` vs `repo_script_episodes`)**: In our benchmark, exactly 20 episodes are evaluated per scenario (20 episodes $\times$ 11 scenarios = 220 episodes). In the repo script, `--n 20` executes 20 total episodes across the entire suite of IANEnv environments, randomly selecting scenarios on each `env.reset()`. In this measured 20-episode rollout, individual scenarios were sampled only 1 to 3 times (e.g., `irosasl6`: 3 episodes, `irosasl_office_j1`: 2 episodes, `irosasl_office_j3`: 2 episodes, `irosasl3`: 1 episode, `irosunity_scene_map3`: 1 episode), while unsampled scenarios cannot be measured and are recorded as `N/A`.
+2. **Episode Count (`episodes` vs `repo_script_episodes`)**: In our benchmark, exactly 20 episodes are evaluated per scenario (20 episodes $\times$ 11 scenarios = 220 episodes). In the repo script, `--n 20` executes 20 total episodes across the entire suite of IANEnv environments, randomly selecting scenarios on each `env.reset()`. In this measured 20-episode rollout, individual scenarios were sampled only 1 to 3 times (e.g., `irosasl6` (a scenario outside the 11 benchmarked): 3 episodes, `irosasl_office_j1`: 2 episodes, `irosasl_office_j3`: 2 episodes, `irosasl3`: 1 episode, `irosunity_scene_map3`: 1 episode), while unsampled scenarios cannot be measured and are recorded as `N/A`.
 3. **Step Limits (`max_steps` vs `repo_script_max_steps`)**: Read directly from the repository code, `IANEnv` sets `max_episode_length = 1000` (`navrep/envs/encodedenv.py:317` and `navrep/envs/ianenv.py:29`), which our cross-test rollout verified (episodes reached up to 1000 steps). Our benchmark evaluates `IANEnv` scenarios with `max_steps = 500`. For `NavRepTrainEnv`, the code defines `time_limit = 35` and `time_step = 0.2` ($35 / 0.2 = 175$ steps in `crowd_sim/envs/crowd_sim.py:28-29`), but `cross_test_navreptrain_in_ianenv.py` only tests `IANEnv`, so repo script numbers for `navreptrain` scenarios cannot be measured and are recorded as `N/A`.
-4. **Seed Distribution (`seeds`)**: Our benchmark explicitly evaluates fixed sequential seeds 100–119 via `env.seed(seed)` for reproducible per-scenario evaluation. The repo script calls `env.reset()` without setting a seed, running unseeded stochastic episode resets.
+4. **Seed Distribution (`seeds`)**: Our benchmark strictly pins random seeds 100–119 using `np.random.seed(seed)` and `random.seed(seed)` before each reset for reproducible per-scenario evaluation. The repo script calls `env.reset()` without setting seeds, running unseeded stochastic episode resets.
 5. **Deterministic Flag (`predict(deterministic=True)`)**: Read directly from code, both evaluations use `deterministic=True` during policy inference (`predict(obs, deterministic=True)` in `navrep/scripts/test_navrep.py:22` and `scripts_custom/remediate_and_record.py`).
 
-### 5. Single Scenario Recording CLI
+### 8.5 Single Scenario Recording CLI
 To record an individual scenario with custom parameters:
 ```bash
-MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
+HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py \
     --scenario irosasl1 \
     --seed 42 \
     --backend VAE_LSTM \
@@ -167,8 +189,8 @@ MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python scripts_custom/record_scenario.py 
     --out submission/task2_videos/03_irosasl1_test.mp4
 ```
 
-### 6. Development Scripts
-Scratch, diagnostic, and remediation scripts used during investigation and debugging are organized in [`scripts_custom/dev/`](file://scripts_custom/dev/):
+### 8.6 Development Scripts
+Scratch, diagnostic, and remediation scripts used during investigation and debugging are organized in [`scripts_custom/dev/`](scripts_custom/dev/):
 - `scripts_custom/dev/diagnose_collisions.py`: Analyzes collision boundaries and minimum obstacle clearances.
 - `scripts_custom/dev/diagnose_ian_rendering.py`: Verifies ASL map bounding box coordinate extents and laser projection.
 - `scripts_custom/dev/finish_task2.py`: Initial orchestration scratch script for video candidates.
@@ -177,6 +199,6 @@ Scratch, diagnostic, and remediation scripts used during investigation and debug
 
 ---
 
-## 8. Display and Video Encoding Notes
-- **Headless Display**: In environments without an active X server, software vector rendering is natively handled through OpenCV buffer compositing directly to image arrays, eliminating X11/Xvfb display server dependencies.
+## 9. Display and Video Encoding Notes
+- **Headless Display**: In environments without an active X server or Xvfb display server, software vector rendering is natively handled through OpenCV buffer compositing directly to image arrays, eliminating X11 and Xvfb display server dependencies.
 - **Video Encoding**: MP4 encoding uses `imageio` with the pinned `imageio-ffmpeg` binary backend, producing standard H.264 (`yuv420p`) video streams playable in any web browser and media player.
