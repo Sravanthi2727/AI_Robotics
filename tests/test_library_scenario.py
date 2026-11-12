@@ -396,6 +396,147 @@ class TestLibraryScenario(unittest.TestCase):
         )
         env.close()
 
+    def test_goal_selection_valid_destinations(self):
+        """1. Verify selecting valid preset destinations returns True from validator."""
+        from navrep_custom.library_planner import validate_library_goal, LIBRARY_PRESET_DESTINATIONS
+        for name, coords in LIBRARY_PRESET_DESTINATIONS:
+            valid, reason = validate_library_goal(coords)
+            self.assertTrue(valid, "Preset '{}' at {} failed validation: {}".format(name, coords, reason))
+
+    def test_goal_selection_rejects_inside_obstacle(self):
+        """2. Verify goal selection rejects coordinates located inside static obstacles."""
+        from navrep_custom.library_planner import validate_library_goal
+        # Point inside Shelf A1: spans [-8.5, -3.5], [4.4, 5.2]
+        valid, reason = validate_library_goal((-6.0, 4.8))
+        self.assertFalse(valid, "Goal inside Shelf A1 should be rejected")
+        self.assertIn("obstacle", reason.lower())
+
+        # Point inside Study Table A: spans [-6.8, -3.2], [-4.8, -3.2]
+        valid, reason = validate_library_goal((-5.0, -4.0))
+        self.assertFalse(valid, "Goal inside Study Table A should be rejected")
+        self.assertIn("obstacle", reason.lower())
+
+    def test_goal_selection_rejects_outside_bounds(self):
+        """3. Verify goal selection rejects coordinates placed outside library world bounds."""
+        from navrep_custom.library_planner import validate_library_goal
+        out_points = [(-15.0, 0.0), (15.0, 0.0), (0.0, 10.0), (0.0, -10.0)]
+        for pt in out_points:
+            valid, reason = validate_library_goal(pt)
+            self.assertFalse(valid, "Point {} outside boundary must be rejected".format(pt))
+            self.assertIn("boundar", reason.lower())
+
+    def test_goal_selection_rejects_insufficient_clearance(self):
+        """4. Verify goal selection rejects coordinates right on obstacle edge (<0.35m clearance)."""
+        from navrep_custom.library_planner import validate_library_goal
+        # Shelf A2 corner is at (-3.5, 2.6); test point at (-3.48, 2.62)
+        valid, reason = validate_library_goal((-3.48, 2.62))
+        self.assertFalse(valid, "Point on shelf corner edge must be rejected for clearance")
+
+    def test_replanning_from_robot_current_position(self):
+        """5. Verify dynamic replanning operates from the robot's current position."""
+        from navrep_custom.library_planner import replan_library_route
+        robot_curr_pos = (-2.0, 3.1)
+        new_goal = (2.25, 3.5) # Archive Reading Table
+        plan = replan_library_route(robot_curr_pos, new_goal)
+
+        self.assertTrue(plan['success'], "Replanning from current position must succeed")
+        self.assertAlmostEqual(plan['start_xy'][0], robot_curr_pos[0], places=2)
+        self.assertAlmostEqual(plan['start_xy'][1], robot_curr_pos[1], places=2)
+        self.assertAlmostEqual(plan['goal_xy'][0], new_goal[0], places=2)
+        self.assertAlmostEqual(plan['goal_xy'][1], new_goal[1], places=2)
+
+    def test_changed_goal_produces_newly_calculated_route(self):
+        """6. Verify changing the goal produces a distinctly new route and waypoints."""
+        from navrep_custom.library_planner import replan_library_route
+        curr_pos = (-8.0, 3.5)
+        goal_a = (5.5, -3.5)   # Circulation Desk
+        goal_b = (2.25, 3.5)   # Archive Reading Table
+
+        plan_a = replan_library_route(curr_pos, goal_a)
+        plan_b = replan_library_route(curr_pos, goal_b)
+
+        self.assertTrue(plan_a['success'])
+        self.assertTrue(plan_b['success'])
+        self.assertNotEqual(plan_a['path_length_m'], plan_b['path_length_m'])
+        self.assertNotEqual(plan_a['waypoints'][-1], plan_b['waypoints'][-1])
+
+    def test_new_route_avoids_static_obstacles(self):
+        """7. Verify that newly calculated replanned routes maintain collision-free clearance."""
+        from navrep_custom.library_planner import replan_library_route
+        cfg = get_scenario_config("library")
+        internal_obstacles = cfg.static_obstacles[1:]
+        robot_radius = 0.30
+
+        # Plan to Mathematics Stack A3
+        plan = replan_library_route((-8.0, 3.5), (-5.0, -1.8))
+        self.assertTrue(plan['success'])
+
+        for pt in plan['path_coords']:
+            for idx, poly in enumerate(internal_obstacles, start=1):
+                self.assertFalse(point_in_polygon(pt[0], pt[1], poly), "Path point inside obstacle {}".format(idx))
+                d = distance_point_to_polygon(pt[0], pt[1], poly)
+                self.assertGreaterEqual(d, robot_radius - 0.05)
+
+    def test_navigation_controller_receives_new_waypoints(self):
+        """8. Verify LibraryNavigationController.set_waypoints dynamically accepts new route."""
+        ctrl = LibraryNavigationController()
+        initial_len = len(ctrl.waypoints)
+
+        new_waypoints = [[-2.0, 3.1], [0.0, 3.1], [2.25, 3.5]]
+        ctrl.set_waypoints(new_waypoints)
+
+        self.assertEqual(len(ctrl.waypoints), 3)
+        self.assertEqual(ctrl.current_wp_idx, 0)
+        self.assertEqual(ctrl.waypoints[-1], [2.25, 3.5])
+        tx, ty = ctrl.get_current_target(-2.0)
+        self.assertAlmostEqual(tx, -2.0)
+        self.assertAlmostEqual(ty, 3.1)
+
+    def test_invalid_goal_does_not_corrupt_existing_route(self):
+        """9. Verify invalid goal rejection preserves the previous valid route."""
+        from navrep_custom.library_planner import validate_library_goal, get_library_a_star_plan
+        canonical_plan = get_library_a_star_plan()
+        original_waypoints = list(canonical_plan['waypoints'])
+
+        # Attempt invalid selection
+        invalid_goal = (-6.0, 4.8) # inside shelf
+        is_valid, _ = validate_library_goal(invalid_goal)
+        self.assertFalse(is_valid)
+
+        # Confirm canonical plan is unaltered
+        plan_after = get_library_a_star_plan()
+        self.assertEqual(plan_after['waypoints'], original_waypoints)
+
+    def test_original_navigation_workflow_preserved(self):
+        """10. Verify original start-to-circulation desk navigation remains 100% functional."""
+        from navrep_custom.library_planner import get_library_a_star_plan
+        plan = get_library_a_star_plan()
+        cfg = get_scenario_config("library")
+        ctrl = LibraryNavigationController(waypoints=plan['waypoints'])
+        env = CustomNavRepEncodedEnv(scenario="library", difficulty="EASY", gpu=False, silent=True)
+
+        np.random.seed(42)
+        ob = env.reset("library", "EASY")
+        sync_and_rasterize_sim(env.raw_env, cfg)
+        ctrl.reset()
+
+        done = False
+        step = 0
+        event = None
+
+        while not done and step < 380:
+            pos = [env.soadrl_sim.robot.px, env.soadrl_sim.robot.py]
+            action = ctrl.act(pos, env.soadrl_sim.humans, action_dim=2)
+            ob, rew, done, info = env.step(action)
+            step += 1
+            ev = info.get('event')
+            if isinstance(ev, (ReachGoal, Collision, CollisionOtherAgent, Timeout)):
+                done = True
+                event = ev
+
+        self.assertIsInstance(event, ReachGoal)
+        env.close()
+
 
 if __name__ == '__main__':
     unittest.main()

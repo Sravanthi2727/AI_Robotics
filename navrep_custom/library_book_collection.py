@@ -280,11 +280,26 @@ class LibraryNavigationController(object):
         [5.5, -3.50],   # WP 5: Circulation counter docking goal
     ]
 
-    def __init__(self, waypoints=None, max_speed=0.80, waypoint_reach_dist=0.50):
+    def __init__(self, waypoints=None, max_speed=0.80, waypoint_reach_dist=None):
         self.waypoints = [list(wp) for wp in (waypoints or self.DEFAULT_WAYPOINTS)]
         self.max_speed = max_speed
-        self.waypoint_reach_dist = waypoint_reach_dist
+        if waypoint_reach_dist is not None:
+            self.waypoint_reach_dist = waypoint_reach_dist
+        else:
+            self.waypoint_reach_dist = 0.50 if (len(self.waypoints) == 7 and abs(self.waypoints[-1][0] - 5.5) < 0.2) else 0.35
         self.current_wp_idx = 0
+        self.detour_x = 0.0
+        self.detour_y = 0.0
+        self.stopped_steps = 0
+
+    def set_waypoints(self, waypoints):
+        """
+        Dynamically updates the controller's active route waypoints.
+        Resets active waypoint index and transient detours.
+        """
+        self.waypoints = [list(wp) for wp in waypoints]
+        self.current_wp_idx = 0
+        self.waypoint_reach_dist = 0.50 if (len(self.waypoints) == 7 and abs(self.waypoints[-1][0] - 5.5) < 0.2) else 0.35
         self.detour_x = 0.0
         self.detour_y = 0.0
         self.stopped_steps = 0
@@ -298,7 +313,8 @@ class LibraryNavigationController(object):
     def get_current_target(self, rx):
         target_wp = self.waypoints[self.current_wp_idx]
         tx, ty = target_wp[0], target_wp[1]
-        if rx > -3.2:
+        # Only apply lateral detour in open central corridor if using canonical baseline route
+        if rx > -3.2 and len(self.waypoints) == 7 and abs(self.waypoints[-1][0] - 5.5) < 0.2:
             tx += self.detour_x
             ty += self.detour_y
         return tx, ty

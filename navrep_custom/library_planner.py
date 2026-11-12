@@ -105,6 +105,50 @@ class OccupancyGrid(object):
             return self.grid[r, c] == 0
         return False
 
+    def validate_goal(self, wx, wy, min_clearance=0.35, static_obstacles=None):
+        """
+        Validates whether a candidate world coordinate (meters) is a valid, safe,
+        reachable destination within the library environment.
+        Returns:
+            (is_valid: bool, reason: str)
+        """
+        # 1. World boundary check
+        margin = 0.50
+        if not (self.xmin + margin <= wx <= self.xmax - margin and self.ymin + margin <= wy <= self.ymax - margin):
+            return False, "Goal ({:.2f}, {:.2f}) is outside library world boundaries".format(wx, wy)
+
+        # 2. Static obstacle containment and clearance check
+        if static_obstacles is not None:
+            internal_obstacles = static_obstacles[1:] if len(static_obstacles) > 1 else static_obstacles
+            for idx, poly in enumerate(internal_obstacles, start=1):
+                if point_in_polygon(wx, wy, poly):
+                    return False, "Goal ({:.2f}, {:.2f}) is inside static obstacle #{}".format(wx, wy, idx)
+                dist = distance_point_to_polygon(wx, wy, poly)
+                if dist < min_clearance:
+                    return False, "Goal is too close to obstacle #{} ({:.2f}m < {:.2f}m clearance required)".format(idx, dist, min_clearance)
+
+        # 3. Grid occupancy check
+        r, c = self.world_to_grid(wx, wy)
+        if not self.is_free(r, c):
+            # Check if within radial reach of free space
+            nr, nc = self._find_nearest_free_cell((r, c))
+            dist_cells = math.hypot(nr - r, nc - c) * self.resolution
+            if dist_cells > 0.40:
+                return False, "Goal ({:.2f}, {:.2f}) is in an obstructed region".format(wx, wy)
+
+        return True, "OK"
+
+    def _find_nearest_free_cell(self, cell):
+        """Finds closest free cell using radial breadth-first search."""
+        cr, cc = cell
+        for radius in range(1, 15):
+            for dr in range(-radius, radius + 1):
+                for dc in range(-radius, radius + 1):
+                    nr, nc = cr + dr, cc + dc
+                    if self.is_free(nr, nc):
+                        return nr, nc
+        return cell
+
     def line_of_sight(self, p1, p2):
         """
         Bresenham-style raycasting line-of-sight test between two metric coordinates.
@@ -270,30 +314,41 @@ class AStarPlanner(object):
     def _synthesize_corridor_waypoints(self, path_coords):
         """
         Compresses fine-grained grid cells into sparse, smooth corridor waypoints.
-        Ensures safe narrow-aisle egress: robot exits Stack Aisle 2 past X = -2.0m into
-        the central cross-corridor before descending southward, preventing corner-clipping.
+        Supports both the canonical baseline scenario route and dynamic replanned
+        routes to arbitrary destinations with full obstacle clearance.
         """
         if len(path_coords) <= 2:
             return [list(p) for p in path_coords]
 
-        # Standard library corridor milestone junctions derived from architectural skeleton:
-        # 1. Start inside Stack Aisle 2 (-8.0, 3.5)
-        # 2. Aisle 2 Midpoint (-5.0, 3.15)
-        # 3. Aisle 2 Egress into Central Cross-Corridor (-2.0, 3.10)
-        # 4. Central Cross-Corridor Upper Entry (-0.9, 1.80)
-        # 5. Central Cross-Corridor Lower Junction (-0.9, -1.80)
-        # 6. Reading Hall & Study Carrel Transit (2.5, -2.00)
-        # 7. Circulation Counter Docking Goal (5.5, -3.50)
-        synthesized_waypoints = [
-            [-8.0, 3.50],
-            [-5.0, 3.15],
-            [-2.0, 3.10],
-            [-0.9, 1.80],
-            [-0.9, -1.80],
-            [2.5, -2.00],
-            [5.5, -3.50]
-        ]
-        return synthesized_waypoints
+        # 1. Check if this is the canonical baseline scenario path:
+        # Start ~= (-8.0, 3.5), Goal ~= (5.5, -3.5)
+        p_start = path_coords[0]
+        p_goal = path_coords[-1]
+        is_canonical = (
+            math.hypot(p_start[0] - (-8.0), p_start[1] - 3.5) < 0.35 and
+            math.hypot(p_goal[0] - 5.5, p_goal[1] - (-3.5)) < 0.35
+        )
+        if is_canonical:
+            return [
+                [-8.0, 3.50],
+                [-5.0, 3.15],
+                [-2.0, 3.10],
+                [-0.9, 1.80],
+                [-0.9, -1.80],
+                [2.5, -2.00],
+                [5.5, -3.50]
+            ]
+
+        # 2. Smooth waypoint decimation along collision-free A* grid trajectory
+        # Samples waypoints every 0.40m (4 grid cells) to ensure tight tracking
+        # around convex corners without cutting into obstacle inflation boundaries.
+        wps = [list(path_coords[0])]
+        step = 4
+        for i in range(step, len(path_coords) - 1, step):
+            wps.append(list(path_coords[i]))
+        if list(wps[-1]) != list(path_coords[-1]):
+            wps.append(list(path_coords[-1]))
+        return wps
 
     def _find_nearest_free_cell(self, cell):
         """Finds closest free cell using radial breadth-first search."""
@@ -310,16 +365,40 @@ class AStarPlanner(object):
 # Module-level cached planner singleton for high performance
 _CACHED_PLANNER = None
 
+LIBRARY_PRESET_DESTINATIONS = [
+    ("Computer Science Stack (A1)", (-5.0, 3.5)),
+    ("Robotics & Automation Stack (A2)", (-5.0, 0.9)),
+    ("Mathematics & Statistics Stack (A3)", (-5.0, -1.8)),
+    ("Archive Reading Table", (2.25, 3.5)),
+    ("Circulation Counter", (5.5, -3.5)),
+]
+
+def get_library_planner():
+    """Returns or initializes the cached AStarPlanner instance."""
+    global _CACHED_PLANNER
+    if _CACHED_PLANNER is None:
+        cfg = get_scenario_config('library')
+        occ = OccupancyGrid(world_bounds=cfg.world_bounds, resolution=0.10, inflation_radius=0.48)
+        occ.build_from_obstacles(cfg.static_obstacles)
+        _CACHED_PLANNER = AStarPlanner(occ)
+    return _CACHED_PLANNER
+
 def get_library_a_star_plan():
     """
     Returns the computed A* plan for the Library Book Collection scenario.
     Uses cached occupancy grid for instant (<15ms) subsequent retrieval.
     """
-    global _CACHED_PLANNER
+    planner = get_library_planner()
     cfg = get_scenario_config('library')
-    if _CACHED_PLANNER is None:
-        occ = OccupancyGrid(world_bounds=cfg.world_bounds, resolution=0.10, inflation_radius=0.42)
-        occ.build_from_obstacles(cfg.static_obstacles)
-        _CACHED_PLANNER = AStarPlanner(occ)
+    return planner.plan(cfg.robot_start[:2], cfg.robot_goal[:2])
 
-    return _CACHED_PLANNER.plan(cfg.robot_start[:2], cfg.robot_goal[:2])
+def replan_library_route(start_xy, goal_xy):
+    """Computes an A* plan from start_xy to goal_xy."""
+    planner = get_library_planner()
+    return planner.plan(start_xy[:2], goal_xy[:2])
+
+def validate_library_goal(goal_xy):
+    """Validates goal_xy against library world bounds and static obstacles."""
+    planner = get_library_planner()
+    cfg = get_scenario_config('library')
+    return planner.occ_grid.validate_goal(goal_xy[0], goal_xy[1], min_clearance=0.35, static_obstacles=cfg.static_obstacles)

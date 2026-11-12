@@ -81,7 +81,14 @@ from navrep_custom.library_book_collection import (
     sync_and_rasterize_sim,
     LibraryNavigationController,
 )
-from navrep_custom.library_planner import OccupancyGrid, AStarPlanner, get_library_a_star_plan
+from navrep_custom.library_planner import (
+    OccupancyGrid,
+    AStarPlanner,
+    get_library_a_star_plan,
+    replan_library_route,
+    validate_library_goal,
+    LIBRARY_PRESET_DESTINATIONS,
+)
 from crowd_sim.envs.utils.info import ReachGoal, Collision, CollisionOtherAgent, Timeout
 
 
@@ -176,6 +183,13 @@ class LibraryDemoApp(object):
         self.trajectory = []
         self.terminal_event = None
         self.nav_state_str = "READY"
+
+        # Interactive Goal Selection & Dynamic Replanning State
+        self.is_selecting_goal = False
+        self.selected_goal = None              # [gx, gy] (metric coordinates)
+        self.selected_goal_label = None        # Name of destination
+        self.mouse_hover_coords = None         # (wx, wy)
+        self.original_goal = [5.5, -3.5]       # Canonical baseline circulation desk goal
 
         # Background benchmark queue
         self.benchmark_queue = queue.Queue()
@@ -325,6 +339,8 @@ class LibraryDemoApp(object):
             highlightthickness=0
         )
         self.canvas.pack(fill="both", expand=True, padx=4, pady=4)
+        self.canvas.bind("<Button-1>", self.on_canvas_clicked)
+        self.canvas.bind("<Motion>", self.on_canvas_motion)
 
         # RIGHT: Side Control & Telemetry Panel (30% width)
         right_panel = tk.Frame(body, bg=THEME_PANEL_BG, width=370, bd=1, relief="ridge")
@@ -435,7 +451,84 @@ class LibraryDemoApp(object):
         )
         self.btn_reset.pack(side="left", expand=True, fill="x", padx=2)
 
-        # 3. Difficulty & Speed Configuration
+        # 3. Interactive Goal Selection & Dynamic Replanning
+        goal_card = tk.LabelFrame(
+            right_panel,
+            text=" Interactive Goal Selection & Replanning ",
+            font=("Helvetica", 9, "bold"),
+            fg=THEME_ACCENT_AMBER,
+            bg=THEME_CARD_BG,
+            bd=1,
+            relief="groove"
+        )
+        goal_card.pack(fill="x", padx=8, pady=4)
+
+        row_g1 = tk.Frame(goal_card, bg=THEME_CARD_BG)
+        row_g1.pack(fill="x", padx=4, pady=2)
+
+        self.btn_select_goal = tk.Button(
+            row_g1,
+            text="[+] SELECT NEW GOAL",
+            font=("Helvetica", 8, "bold"),
+            bg="#00838f",
+            fg="white",
+            activebackground="#0097a7",
+            activeforeground="white",
+            command=self.on_select_new_goal_pressed
+        )
+        self.btn_select_goal.pack(side="left", expand=True, fill="x", padx=2)
+
+        self.btn_replan = tk.Button(
+            row_g1,
+            text="REPLAN ROUTE",
+            font=("Helvetica", 8, "bold"),
+            bg="#e65100",
+            fg="white",
+            activebackground="#f57c00",
+            activeforeground="white",
+            command=self.on_replan_pressed
+        )
+        self.btn_replan.pack(side="left", expand=True, fill="x", padx=2)
+
+        row_g2 = tk.Frame(goal_card, bg=THEME_CARD_BG)
+        row_g2.pack(fill="x", padx=4, pady=2)
+
+        lbl_preset = tk.Label(row_g2, text="Preset:", font=("Helvetica", 8, "bold"), fg=THEME_FG, bg=THEME_CARD_BG)
+        lbl_preset.pack(side="left", padx=(2, 2))
+
+        preset_options = [name for name, _ in LIBRARY_PRESET_DESTINATIONS]
+        self.preset_var = tk.StringVar(value=preset_options[0])
+        self.opt_preset = tk.OptionMenu(
+            row_g2,
+            self.preset_var,
+            *preset_options,
+            command=self.on_preset_destination_selected
+        )
+        self.opt_preset.config(font=("Helvetica", 7, "bold"), bg=THEME_PANEL_BG, fg=THEME_FG_BRIGHT, activebackground="#37474f", highlightthickness=0, bd=1, relief="groove", width=20, anchor="w")
+        self.opt_preset.pack(side="left", fill="x", expand=True, padx=2)
+
+        self.btn_reset_scenario = tk.Button(
+            row_g2,
+            text="Reset Original",
+            font=("Helvetica", 7, "bold"),
+            bg="#37474f",
+            fg="white",
+            command=self.on_reset_to_original_pressed
+        )
+        self.btn_reset_scenario.pack(side="left", padx=2)
+
+        self.lbl_goal_status = tk.Label(
+            goal_card,
+            text="Click 'SELECT NEW GOAL' or choose a preset destination.",
+            font=("Helvetica", 8),
+            fg=THEME_ACCENT_BLUE,
+            bg=THEME_CARD_BG,
+            wraplength=340,
+            justify="left"
+        )
+        self.lbl_goal_status.pack(anchor="w", padx=6, pady=(1, 3))
+
+        # 4. Difficulty & Speed Configuration
         cfg_frame = tk.Frame(right_panel, bg=THEME_PANEL_BG)
         cfg_frame.pack(fill="x", padx=8, pady=4)
 
@@ -576,6 +669,11 @@ class LibraryDemoApp(object):
         self.is_running = False
         self.is_paused = False
         self.is_planning_animating = False
+        self.is_selecting_goal = False
+        if hasattr(self, 'btn_select_goal'):
+            self.btn_select_goal.configure(text="[+] SELECT NEW GOAL", bg="#00838f")
+            self.canvas.config(cursor="")
+
         self.btn_start.configure(text="Start Navigation", state="normal")
         self.btn_pause.configure(text="Pause", state="disabled")
 
@@ -595,6 +693,10 @@ class LibraryDemoApp(object):
         )
         self.env.reset("library", self.current_difficulty)
         sync_and_rasterize_sim(self.env.raw_env, self.cfg)
+
+        if self.selected_goal is not None:
+            self.env.soadrl_sim.robot.gx = self.selected_goal[0]
+            self.env.soadrl_sim.robot.gy = self.selected_goal[1]
 
         # Initialize controller with calculated A* waypoints
         if self.active_a_star_waypoints is not None:
@@ -648,6 +750,11 @@ class LibraryDemoApp(object):
             if self.is_full_demo_active:
                 # Transition smoothly into navigation after planning
                 self.root.after(800, self._start_navigation_after_planning)
+            else:
+                self.btn_start.configure(
+                    text="Resume" if self.current_step > 0 else "Start Navigation",
+                    state="normal"
+                )
 
     def _start_navigation_after_planning(self):
         """Transitions from path planning to autonomous navigation in Full Demo mode."""
@@ -722,6 +829,192 @@ class LibraryDemoApp(object):
             self.pacing_speed = 2.0
             self.step_delay_ms = 100
 
+    # --------------------------------------------------------------------------
+    # INTERACTIVE GOAL SELECTION & DYNAMIC REPLANNING HANDLERS
+    # --------------------------------------------------------------------------
+    def on_select_new_goal_pressed(self):
+        """Toggles interactive canvas goal selection mode."""
+        self.is_selecting_goal = not self.is_selecting_goal
+        if self.is_selecting_goal:
+            self.btn_select_goal.configure(text="[x] CANCEL SELECTION", bg="#c62828")
+            self.canvas.config(cursor="crosshair")
+            self.lbl_goal_status.configure(
+                text="Click a reachable location on the map to set a new destination.",
+                fg=THEME_ACCENT_AMBER
+            )
+            self._update_badges("SELECTING GOAL", "#ffb74d")
+        else:
+            self.btn_select_goal.configure(text="[+] SELECT NEW GOAL", bg="#00838f")
+            self.canvas.config(cursor="")
+            self.lbl_goal_status.configure(text="Goal selection cancelled.", fg=THEME_FG)
+            self._update_badges("READY", "#9e9e9e")
+        self._render_current_frame()
+
+    def on_canvas_motion(self, event):
+        """Tracks cursor over canvas during goal selection mode."""
+        if self.is_selecting_goal:
+            wx, wy = self._px2w(event.x, event.y)
+            wx, wy = round(wx, 2), round(wy, 2)
+            self.mouse_hover_coords = (wx, wy)
+            if hasattr(self, 'lbl_goal_status'):
+                self.lbl_goal_status.configure(
+                    text="Pointer: ({:+.2f}m, {:+.2f}m) -- Click to choose destination".format(wx, wy),
+                    fg=THEME_ACCENT_AMBER
+                )
+
+    def on_canvas_clicked(self, event):
+        """Handles map clicks for dynamic goal selection."""
+        if not self.is_selecting_goal:
+            return
+
+        wx, wy = self._px2w(event.x, event.y)
+        wx, wy = round(wx, 2), round(wy, 2)
+        valid, reason = validate_library_goal((wx, wy))
+        if not valid:
+            self.lbl_goal_status.configure(
+                text="[!] Invalid Goal: {}".format(reason),
+                fg=THEME_ACCENT_RED
+            )
+            self._update_badges("INVALID GOAL", "#e06c75")
+            return
+
+        # Valid location selected
+        self.is_selecting_goal = False
+        self.btn_select_goal.configure(text="[+] SELECT NEW GOAL", bg="#00838f")
+        self.canvas.config(cursor="")
+        label = "Custom Target ({:+.2f}, {:+.2f})".format(wx, wy)
+        self._apply_new_destination([wx, wy], label)
+
+    def on_preset_destination_selected(self, selection):
+        """Handles selection of a destination preset from dropdown."""
+        coords = None
+        for name, pt in LIBRARY_PRESET_DESTINATIONS:
+            if name == selection:
+                coords = pt
+                break
+        if coords is None:
+            return
+
+        valid, reason = validate_library_goal(coords)
+        if not valid:
+            self.lbl_goal_status.configure(
+                text="[!] Preset Invalid: {}".format(reason),
+                fg=THEME_ACCENT_RED
+            )
+            return
+
+        self._apply_new_destination(list(coords), selection)
+
+    def _apply_new_destination(self, coords, label):
+        """Sets destination and triggers genuine dynamic A* replanning."""
+        self.selected_goal = list(coords)
+        self.selected_goal_label = label
+
+        # Pause robot if moving
+        if self.is_running and not self.is_paused:
+            self.on_pause_pressed()
+
+        self.lbl_goal_status.configure(
+            text="Destination: {} | ({:+.2f}, {:+.2f})".format(label, coords[0], coords[1]),
+            fg=THEME_ACCENT_GREEN
+        )
+        # Execute genuine dynamic replanning
+        self.on_replan_pressed()
+
+    def on_replan_pressed(self):
+        """
+        Executes genuine dynamic A* replanning from robot's CURRENT position to selected goal.
+        """
+        if self.selected_goal is None:
+            self.lbl_goal_status.configure(
+                text="[!] Please select a new destination on map or preset first.",
+                fg=THEME_ACCENT_AMBER
+            )
+            return
+
+        if self.is_running and not self.is_paused:
+            self.on_pause_pressed()
+
+        # Current robot pose in metric coordinates
+        robot = self.env.soadrl_sim.robot
+        start_xy = [robot.px, robot.py]
+        goal_xy = self.selected_goal
+
+        # Stage A: New goal selected
+        self.view_mode = "PLANNING"
+        self.lbl_header_mode.configure(text="MODE: DYNAMIC A* REPLANNING", bg="#ff9800")
+        self.lbl_canvas_title.configure(
+            text="CALCULATING NEW ROUTE FROM ({:+.2f}, {:+.2f}) TO ({:+.2f}, {:+.2f})".format(
+                start_xy[0], start_xy[1], goal_xy[0], goal_xy[1]
+            )
+        )
+        self._update_badges("REPLANNING", "#ff9800")
+        self.lbl_goal_status.configure(text="Calculating optimal collision-free route...", fg=THEME_ACCENT_AMBER)
+        self.root.update_idletasks()
+
+        # Calculate new A* plan from current robot position to goal
+        new_plan = replan_library_route(start_xy, goal_xy)
+        if not new_plan or not new_plan.get('success'):
+            self.lbl_goal_status.configure(
+                text="[!] Replanning Failed: No collision-free route to destination",
+                fg=THEME_ACCENT_RED
+            )
+            self._update_badges("PLAN FAILED", "#e06c75")
+            return
+
+        # Stage B: A* Search result update
+        self.planner_data = new_plan
+        self.active_a_star_waypoints = [list(wp) for wp in new_plan['waypoints']]
+
+        # Update controller waypoints dynamically
+        self.ctrl.set_waypoints(self.active_a_star_waypoints)
+
+        # Update environment goal coordinates
+        self.env.soadrl_sim.robot.gx = goal_xy[0]
+        self.env.soadrl_sim.robot.gy = goal_xy[1]
+
+        # Update metrics panel
+        self.lbl_plan_status.configure(text="Algorithm: Dynamic A* Search [f(n)=g(n)+h(n)]")
+        self.lbl_plan_stats1.configure(
+            text="Explored: {:,} cells | Length: {:.2f} m".format(
+                new_plan.get('nodes_expanded', 0), new_plan.get('path_length_m', 0.0)
+            )
+        )
+        self.lbl_plan_stats2.configure(
+            text="Time: {:.1f} ms | Res: 0.10m | Waypoints: {}".format(
+                new_plan.get('planning_time_ms', 0.0), len(self.active_a_star_waypoints)
+            )
+        )
+
+        self.lbl_goal_status.configure(
+            text="Route synthesized: {:.2f}m ({} waypoints). Click 'Start Navigation' or 'Resume'.".format(
+                new_plan.get('path_length_m', 0.0), len(self.active_a_star_waypoints)
+            ),
+            fg=THEME_ACCENT_GREEN
+        )
+
+        # Animate search expansion
+        self.is_planning_animating = True
+        self.planning_keyframe_idx = 0
+        self._animate_planning_step()
+
+    def on_reset_to_original_pressed(self):
+        """Resets scenario to canonical circulation desk route."""
+        self.is_selecting_goal = False
+        self.selected_goal = None
+        self.selected_goal_label = None
+        if hasattr(self, 'btn_select_goal'):
+            self.btn_select_goal.configure(text="[+] SELECT NEW GOAL", bg="#00838f")
+            self.canvas.config(cursor="")
+        self._compute_a_star_plan()
+        self.reset_simulation()
+        self.lbl_goal_status.configure(
+            text="Reset to original Circulation Counter scenario.",
+            fg=THEME_ACCENT_BLUE
+        )
+        self._update_badges("READY", "#9e9e9e")
+        self._render_current_frame()
+
     def _step_simulation_loop(self):
         """Non-blocking step execution scheduled via root.after()."""
         if not self.is_running or self.is_paused:
@@ -753,7 +1046,8 @@ class LibraryDemoApp(object):
         elif self.ctrl.detour_x != 0.0 or self.ctrl.detour_y != 0.0:
             self.nav_state_str = "DETOUR ACTIVE (Bypassing static patron cluster)"
         elif self.ctrl.current_wp_idx >= len(self.ctrl.waypoints) - 1:
-            self.nav_state_str = "DOCKING AT CIRCULATION COUNTER"
+            dest_name = self.selected_goal_label if self.selected_goal_label else "CIRCULATION COUNTER"
+            self.nav_state_str = "DOCKING AT {}".format(dest_name.upper())
         elif robot.px < -3.2:
             self.nav_state_str = "TRANSIT: Stack Aisle 2 (Narrow Corridor)"
         elif robot.px < 1.0:
@@ -765,7 +1059,12 @@ class LibraryDemoApp(object):
         self._render_current_frame()
 
         event = info.get('event')
-        if isinstance(event, (ReachGoal, Collision, CollisionOtherAgent, Timeout)):
+        target_goal = self.selected_goal if self.selected_goal is not None else self.cfg.robot_goal
+        dist_to_curr_goal = math.hypot(target_goal[0] - robot.px, target_goal[1] - robot.py)
+        if dist_to_curr_goal < 0.35 and self.ctrl.current_wp_idx >= len(self.ctrl.waypoints) - 1:
+            done = True
+            event = ReachGoal()
+        elif isinstance(event, (ReachGoal, Collision, CollisionOtherAgent, Timeout)):
             done = True
 
         if done:
@@ -805,7 +1104,8 @@ class LibraryDemoApp(object):
         )
 
         rx, ry = self.env.soadrl_sim.robot.px, self.env.soadrl_sim.robot.py
-        gx, gy = self.cfg.robot_goal[0], self.cfg.robot_goal[1]
+        target_goal = self.selected_goal if self.selected_goal is not None else self.cfg.robot_goal
+        gx, gy = target_goal[0], target_goal[1]
         dist_goal = math.hypot(rx - gx, ry - gy)
         theta_deg = math.degrees(self.env.soadrl_sim.robot.theta)
 
@@ -816,21 +1116,27 @@ class LibraryDemoApp(object):
             text="Speed: |v|={:4.2f} m/s (vx={:+4.2f}, vy={:+4.2f})".format(
                 math.hypot(vx, vy), vx, vy)
         )
+        target_name = self.selected_goal_label if self.selected_goal_label else "Circulation Desk"
         self.lbl_telem_goal.configure(
-            text="Dist to Goal: {:5.2f} m (Dock: {:+4.1f}, {:+4.1f})".format(dist_goal, gx, gy)
+            text="Dist to Goal: {:5.2f} m ({:+4.1f}, {:+4.1f})".format(dist_goal, gx, gy)
         )
 
-        wp_names = [
-            "WP 0 (Start Carrel)",
-            "WP 1 (Aisle 2 Mid)",
-            "WP 2 (Aisle 2 Egress)",
-            "WP 3 (Cross-Corridor Upper)",
-            "WP 4 (Cross-Corridor Lower)",
-            "WP 5 (Reading Hall Transit)",
-            "WP 6 (Circulation Desk Dock)"
-        ]
-        wp_idx = min(self.ctrl.current_wp_idx, len(wp_names) - 1)
-        self.lbl_telem_wp.configure(text="Active Waypoint: {}".format(wp_names[wp_idx]))
+        n_wps = len(self.ctrl.waypoints)
+        curr_idx = min(self.ctrl.current_wp_idx, n_wps - 1)
+        if n_wps == 7 and abs(self.ctrl.waypoints[-1][0] - 5.5) < 0.2:
+            wp_names = [
+                "WP 0 (Start Carrel)",
+                "WP 1 (Aisle 2 Mid)",
+                "WP 2 (Aisle 2 Egress)",
+                "WP 3 (Cross-Corridor Upper)",
+                "WP 4 (Cross-Corridor Lower)",
+                "WP 5 (Reading Hall Transit)",
+                "WP 6 (Circulation Desk Dock)"
+            ]
+            self.lbl_telem_wp.configure(text="Active Waypoint: {}".format(wp_names[curr_idx]))
+        else:
+            self.lbl_telem_wp.configure(text="Active Waypoint: WP {} / {} -> ({:+.2f}, {:+.2f})".format(
+                curr_idx, n_wps - 1, self.ctrl.waypoints[curr_idx][0], self.ctrl.waypoints[curr_idx][1]))
         self.lbl_telem_state.configure(text="Controller State: {}".format(self.nav_state_str))
 
     # --------------------------------------------------------------------------
@@ -841,6 +1147,12 @@ class LibraryDemoApp(object):
         px = int(self.orig_x + wx * self.scale_px)
         py = int(self.orig_y - wy * self.scale_px)
         return px, py
+
+    def _px2w(self, px, py):
+        """Converts canvas pixel coordinates to world coordinates (meters)."""
+        wx = (px - self.orig_x) / float(self.scale_px)
+        wy = (self.orig_y - py) / float(self.scale_px)
+        return wx, wy
 
     def _render_current_frame(self):
         """Draws the realistic academic library floor plan and all active dynamic elements."""
@@ -904,10 +1216,12 @@ class LibraryDemoApp(object):
             cv2.putText(img, "START: Aisle 2", (s_px - 40, s_py - 18), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (30, 120, 40), 1, cv2.LINE_AA)
 
             # Goal Docking Bay Marker
-            g_px, g_py = self._w2px(self.cfg.robot_goal[0], self.cfg.robot_goal[1])
+            target_goal = self.selected_goal if self.selected_goal is not None else self.cfg.robot_goal
+            g_px, g_py = self._w2px(target_goal[0], target_goal[1])
             cv2.circle(img, (g_px, g_py), 16, (0, 190, 250), 2, cv2.LINE_AA)
             cv2.circle(img, (g_px, g_py), 9, (0, 190, 250), -1, cv2.LINE_AA)
-            cv2.putText(img, "GOAL: Circulation Desk", (g_px - 65, g_py - 22), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 140, 200), 2, cv2.LINE_AA)
+            g_lbl = "GOAL: " + (self.selected_goal_label if self.selected_goal_label else "Circulation Desk")
+            cv2.putText(img, g_lbl, (g_px - 70, g_py - 22), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 140, 200), 2, cv2.LINE_AA)
 
         # 7. Visited Trajectory Trail
         if len(self.trajectory) > 1:
@@ -924,7 +1238,27 @@ class LibraryDemoApp(object):
         if self.env is not None and hasattr(self.env, "soadrl_sim"):
             self._draw_robot_amr(img)
 
-        # 10. Bottom HUD Legend & Calibrated Scale Bar
+        # 10. Interactive Goal Selection Overlay (when selection active)
+        if self.is_selecting_goal:
+            cv2.rectangle(img, (20, 16), (580, 50), (25, 28, 36), -1)
+            cv2.rectangle(img, (20, 16), (580, 50), (0, 190, 255), 2)
+            cv2.putText(
+                img,
+                "[SELECTION MODE] CLICK A REACHABLE MAP LOCATION FOR NEW GOAL",
+                (30, 38),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.38,
+                (0, 230, 255),
+                1,
+                cv2.LINE_AA
+            )
+            if self.mouse_hover_coords is not None:
+                hx_px, hy_px = self._w2px(self.mouse_hover_coords[0], self.mouse_hover_coords[1])
+                if 0 <= hx_px < self.canvas_width and 0 <= hy_px < self.canvas_height:
+                    cv2.circle(img, (hx_px, hy_px), 8, (0, 220, 255), 1, cv2.LINE_AA)
+                    cv2.drawMarker(img, (hx_px, hy_px), (0, 220, 255), cv2.MARKER_CROSS, 14, 1)
+
+        # 11. Bottom HUD Legend & Calibrated Scale Bar
         self._draw_hud_legend(img)
 
         # Convert OpenCV BGR to RGB -> ImageTk and render on Canvas
