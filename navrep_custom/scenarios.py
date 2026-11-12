@@ -419,6 +419,102 @@ def create_firedrill_config():
         time_limit_steps=320
     )
 
+# ==============================================================================
+# SCENARIO 7: Hotel Assist - Room Service Delivery Robot
+# ==============================================================================
+def create_hotelroomservice_config():
+    # Hotel floor: 24m x 16m
+    bounds = [-12.0, 12.0, -8.0, 8.0]
+
+    # Kitchen service station -> Guest Room 204
+    start = [-10.0, 0.0, 0.0]
+    goal = [10.0, 0.0]
+
+    obstacles = [
+        # Outer hotel boundary
+        [(-12.0, -8.0), (12.0, -8.0),
+         (12.0, 8.0), (-12.0, 8.0)],
+
+        # Reception desk
+        make_box_obstacle(-8.0, 4.8, 3.0, 1.0),
+
+        # Lobby seating
+        make_box_obstacle(-5.0, -5.5, 3.0, 1.2),
+        make_box_obstacle(-1.0, -5.5, 2.5, 1.2),
+
+        # North-side guest room partitions
+        make_box_obstacle(-5.0, 4.0, 2.0, 1.0),
+        make_box_obstacle(0.0, 4.0, 2.0, 1.0),
+        make_box_obstacle(5.0, 4.0, 2.0, 1.0),
+
+        # South-side guest room partitions
+        make_box_obstacle(-3.0, -4.0, 2.0, 1.0),
+        make_box_obstacle(2.0, -4.0, 2.0, 1.0),
+        make_box_obstacle(7.0, -4.0, 2.0, 1.0),
+
+        # Housekeeping storage area
+        make_box_obstacle(9.0, 6.0, 2.0, 1.5),
+    ]
+
+    base_humans = [
+        # Hotel guest walking along the corridor
+        {'pos': [-3.0, 1.0, 0.0],
+         'goal': [4.0, 1.0],
+         'radius': 0.30, 'speed': 0.65,
+         'role': 'pedestrian_guest'},
+
+        # Guest crossing the corridor
+        {'pos': [3.0, -2.0, math.pi/2],
+         'goal': [3.0, 2.0],
+         'radius': 0.30, 'speed': 0.55,
+         'role': 'pedestrian_guest'},
+
+        # Housekeeping staff with trolley
+        {'pos': [-1.0, -1.5, 0.0],
+         'goal': [6.0, -1.5],
+         'radius': 0.42, 'speed': 0.45,
+         'role': 'pedestrian_housekeeping'},
+
+        # Guest moving in the opposite direction
+        {'pos': [8.0, 1.5, math.pi],
+         'goal': [-6.0, 1.5],
+         'radius': 0.30, 'speed': 0.75,
+         'role': 'pedestrian_guest'},
+    ]
+
+    diff_mods = {
+        'EASY': {
+            'density_mult': 0.6,
+            'speed_mult': 0.8,
+            'time_limit': 450,
+            'extra_humans': 0
+        },
+        'MEDIUM': {
+            'density_mult': 1.0,
+            'speed_mult': 1.0,
+            'time_limit': 380,
+            'extra_humans': 2
+        },
+        'HARD': {
+            'density_mult': 1.5,
+            'speed_mult': 1.25,
+            'time_limit': 280,
+            'extra_humans': 4
+        }
+    }
+
+    return ScenarioConfig(
+        scenario_id="hotelroomservice",
+        name="Hotel Assist - Room Service Delivery Robot",
+        description="A hotel service robot delivering room-service orders through guest corridors while navigating around hotel guests and housekeeping staff.",
+        world_bounds=bounds,
+        robot_start=start,
+        robot_goal=goal,
+        static_obstacles=obstacles,
+        base_humans=base_humans,
+        difficulty_modifiers=diff_mods,
+        time_limit_steps=380
+    )
 
 # Registry of all custom scenarios
 SCENARIO_REGISTRY = {
@@ -428,6 +524,7 @@ SCENARIO_REGISTRY = {
     "diwalibazaar": create_diwalibazaar_config,
     "railwaystation": create_railwaystation_config,
     "firedrill": create_firedrill_config,
+    "hotelroomservice": create_hotelroomservice_config,
 }
 
 
