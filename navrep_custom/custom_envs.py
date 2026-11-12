@@ -171,6 +171,30 @@ class CustomNavRepEnv(NavRepTrainEnv):
         # 4. Configure Static Obstacles & Boundary
         self.soadrl_sim.obstacle_vertices = [list(poly) for poly in cfg.static_obstacles]
         self._add_border_obstacle()
+
+        # Build a map matching the 24m hotel world
+        import cv2
+
+        sim = self.soadrl_sim
+        sim.map_size_m = 24.0
+        sim.map_resolution = 0.1
+
+        grid_dim = int(sim.map_size_m / sim.map_resolution)
+        img = np.ones((grid_dim, grid_dim), dtype=np.float32)
+
+        for poly in cfg.static_obstacles[1:]:
+            points = np.array([
+                [
+                    int((x + sim.map_size_m / 2.0) / sim.map_resolution),
+                    int((y + sim.map_size_m / 2.0) / sim.map_resolution)
+                ]
+                for x, y in poly
+            ], dtype=np.int32)
+
+            cv2.fillPoly(img, [points], 0.0)
+
+        sim.map = img.T
+
         self.flat_contours = flatten_contours(self.soadrl_sim.obstacle_vertices)
         self.distances_travelled_in_base_frame = np.zeros((len(humans), 3))
 
