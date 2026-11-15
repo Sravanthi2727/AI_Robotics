@@ -145,15 +145,59 @@ Runs the upstream cross-testing script on compatible PPO models:
 
 ## 3. Custom Scenarios, Benchmark, and Crowd Density Sweep (Task 3)
 
+### 3.1 Fast Commands Reference for Evaluator & Demonstration
+
+#### A. Launch the Live GUI into Any Scenario (VNC / Web Browser)
+Open browser at `http://localhost:6080/vnc_lite.html?scale=true`, then run:
+```bash
+# [1] Launch Institutional Library Book Collection Robot:
+docker exec -d -e DISPLAY=:99 navrep_desktop python /workspace/submission/task3_custom/gui/library_gui.py --scenario library
+
+# [2] Launch Grand Hotel Room Service Delivery Robot:
+docker exec -d -e DISPLAY=:99 navrep_desktop python /workspace/submission/task3_custom/gui/library_gui.py --scenario hotelroomservice
+
+# [3] Launch MediRunner Hospital Medicine Delivery Robot:
+docker exec -d -e DISPLAY=:99 navrep_desktop python /workspace/submission/task3_custom/gui/library_gui.py --scenario hospital
+```
+*(Within the running GUI, you can also toggle between all three instantaneously via the top-right scenario buttons).*
+
+#### B. Fast Automated Multi-Scenario GUI Verification (~9 seconds)
+Runs programmatic end-to-end tests across Library, Hotel, and Hospital verifying geometric floorplans, dynamic switching, A* route synthesis, presets, and controller stepping:
+```bash
+docker exec -e DISPLAY=:99 navrep_desktop python scripts_custom/test_all_scenarios_gui.py
+```
+
+#### C. Fast Headless Smoke-Test Rollouts (~10 seconds per scenario)
+Runs an immediate 1-episode simulation rollout in terminal:
+```bash
+# [1] Library (EASY tier, 1 episode):
+docker exec navrep_desktop python -m navrep_custom.run_custom --scenario library --difficulty EASY --episodes 1
+
+# [2] Hotel Room Service (EASY tier, 1 episode):
+docker exec navrep_desktop python scripts_custom/record_hotel_demo.py --difficulty EASY --episodes 1
+
+# [3] Hospital Medicine Delivery (EASY tier, 1 episode):
+docker exec navrep_desktop python scripts_custom/record_hospital_demo.py --difficulty EASY --episodes 1
+```
+
+#### D. Full Unit Test Suite (56 Tests in ~10 seconds)
+```bash
+docker exec navrep_desktop python -m unittest tests/test_library_scenario.py tests/test_custom_scenarios.py tests/test_hospital_controller.py
+```
+
+---
+
+### 3.2 Detailed Testing & Benchmarks
+
 ### Unit Test Suite Execution
-Runs test cases verifying registry loading, custom environment instantiation, step/reset cycles, and observation/action space alignment across all 6 custom scenarios:
+Runs test cases verifying registry loading, custom environment instantiation, step/reset cycles, and observation/action space alignment across custom scenarios:
 * **Docker**:
   ```bash
-  docker exec navrep_desktop python -m unittest tests/test_custom_scenarios.py
+  docker exec navrep_desktop python -m unittest tests/test_library_scenario.py tests/test_custom_scenarios.py tests/test_hospital_controller.py
   ```
 * **Native**:
   ```bash
-  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m unittest tests/test_custom_scenarios.py
+  HOME=/tmp/home MPLCONFIGDIR=/tmp/matplotlib ./env/bin/python -m unittest tests/test_library_scenario.py tests/test_custom_scenarios.py tests/test_hospital_controller.py
   ```
 
 ### Full Batch Custom Evaluation, Recording & Density Analysis Suite
