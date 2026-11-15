@@ -1,0 +1,16 @@
+{
+  "file": "airport_passenger_assistance_medium_success.mp4",
+  "scenario": "airport_passenger_assistance",
+  "difficulty": "MEDIUM",
+  "seed": 0,
+  "outcome": "GOAL_REACHED",
+  "status_badge": "GOAL REACHED",
+  "steps": 163,
+  "sim_time": 32.6,
+  "final_dist": 0.407,
+  "duration": 14.42,
+  "total_frames": 173,
+  "hold_frames": 10,
+  "fps": 12,
+  "policy": "AIRPORT NAVIGATION (AirportNavigationController deterministic reactive planner)"
+}

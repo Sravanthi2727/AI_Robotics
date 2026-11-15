@@ -1,0 +1,61 @@
+scenario,difficulty,seed,outcome,steps,time_s,final_dist_m
+airport_passenger_assistance,EASY,100,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,EASY,101,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,EASY,102,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,EASY,103,GOAL REACHED,165,33.0,0.294
+airport_passenger_assistance,EASY,104,GOAL REACHED,165,33.0,0.294
+airport_passenger_assistance,EASY,105,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,EASY,106,GOAL REACHED,162,32.4,0.479
+airport_passenger_assistance,EASY,107,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,EASY,108,GOAL REACHED,165,33.0,0.294
+airport_passenger_assistance,EASY,109,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,EASY,110,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,EASY,111,GOAL REACHED,165,33.0,0.294
+airport_passenger_assistance,EASY,112,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,EASY,113,GOAL REACHED,165,33.0,0.294
+airport_passenger_assistance,EASY,114,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,EASY,115,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,EASY,116,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,EASY,117,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,EASY,118,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,EASY,119,GOAL REACHED,165,33.0,0.346
+airport_passenger_assistance,MEDIUM,100,GOAL REACHED,182,36.4,0.346
+airport_passenger_assistance,MEDIUM,101,COLLISION,59,11.8,13.557
+airport_passenger_assistance,MEDIUM,102,TIMEOUT,360,72.0,12.354
+airport_passenger_assistance,MEDIUM,103,GOAL REACHED,166,33.2,0.294
+airport_passenger_assistance,MEDIUM,104,GOAL REACHED,176,35.2,0.31
+airport_passenger_assistance,MEDIUM,105,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,MEDIUM,106,TIMEOUT,360,72.0,13.088
+airport_passenger_assistance,MEDIUM,107,COLLISION,59,11.8,13.437
+airport_passenger_assistance,MEDIUM,108,TIMEOUT,360,72.0,3.769
+airport_passenger_assistance,MEDIUM,109,TIMEOUT,360,72.0,2.989
+airport_passenger_assistance,MEDIUM,110,TIMEOUT,360,72.0,6.088
+airport_passenger_assistance,MEDIUM,111,GOAL REACHED,165,33.0,0.294
+airport_passenger_assistance,MEDIUM,112,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,MEDIUM,113,GOAL REACHED,165,33.0,0.294
+airport_passenger_assistance,MEDIUM,114,TIMEOUT,360,72.0,9.137
+airport_passenger_assistance,MEDIUM,115,GOAL REACHED,164,32.8,0.407
+airport_passenger_assistance,MEDIUM,116,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,MEDIUM,117,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,MEDIUM,118,COLLISION,287,57.4,6.607
+airport_passenger_assistance,MEDIUM,119,COLLISION,45,9.0,15.371
+airport_passenger_assistance,HARD,100,COLLISION,38,7.6,16.228
+airport_passenger_assistance,HARD,101,COLLISION,60,12.0,13.437
+airport_passenger_assistance,HARD,102,COLLISION,24,4.8,17.817
+airport_passenger_assistance,HARD,103,GOAL REACHED,166,33.2,0.294
+airport_passenger_assistance,HARD,104,TIMEOUT,290,58.0,9.275
+airport_passenger_assistance,HARD,105,COLLISION,44,8.8,15.615
+airport_passenger_assistance,HARD,106,COLLISION,47,9.4,15.005
+airport_passenger_assistance,HARD,107,COLLISION,55,11.0,13.917
+airport_passenger_assistance,HARD,108,TIMEOUT,290,58.0,8.882
+airport_passenger_assistance,HARD,109,TIMEOUT,290,58.0,2.989
+airport_passenger_assistance,HARD,110,COLLISION,70,14.0,13.557
+airport_passenger_assistance,HARD,111,TIMEOUT,290,58.0,1.299
+airport_passenger_assistance,HARD,112,GOAL REACHED,163,32.6,0.407
+airport_passenger_assistance,HARD,113,COLLISION,56,11.2,13.917
+airport_passenger_assistance,HARD,114,TIMEOUT,290,58.0,9.137
+airport_passenger_assistance,HARD,115,COLLISION,51,10.2,14.52
+airport_passenger_assistance,HARD,116,GOAL REACHED,164,32.8,0.346
+airport_passenger_assistance,HARD,117,TIMEOUT,290,58.0,3.119
+airport_passenger_assistance,HARD,118,TIMEOUT,290,58.0,8.882
+airport_passenger_assistance,HARD,119,COLLISION,47,9.4,15.371

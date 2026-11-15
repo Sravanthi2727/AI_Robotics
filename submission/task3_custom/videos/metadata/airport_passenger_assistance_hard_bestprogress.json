@@ -1,0 +1,16 @@
+{
+  "file": "airport_passenger_assistance_hard_bestprogress.mp4",
+  "scenario": "airport_passenger_assistance",
+  "difficulty": "HARD",
+  "seed": 111,
+  "outcome": "TIMEOUT",
+  "status_badge": "TIMEOUT",
+  "steps": 290,
+  "sim_time": 58.0,
+  "final_dist": 1.299,
+  "duration": 25.0,
+  "total_frames": 300,
+  "hold_frames": 10,
+  "fps": 12,
+  "policy": "AIRPORT NAVIGATION (AirportNavigationController deterministic reactive planner)"
+}

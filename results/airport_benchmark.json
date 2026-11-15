@@ -1,0 +1,458 @@
+{
+  "EASY": {
+    "episodes": 20,
+    "success_count": 20,
+    "success_rate_pct": 100.0,
+    "collision_count": 0,
+    "collision_rate_pct": 0.0,
+    "timeout_count": 0,
+    "timeout_rate_pct": 0.0,
+    "mean_time_to_goal_s": 32.76,
+    "episodes_detail": [
+      {
+        "seed": 100,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 101,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 102,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 103,
+        "outcome": "GOAL REACHED",
+        "steps": 165,
+        "time_s": 33.0,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 104,
+        "outcome": "GOAL REACHED",
+        "steps": 165,
+        "time_s": 33.0,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 105,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 106,
+        "outcome": "GOAL REACHED",
+        "steps": 162,
+        "time_s": 32.4,
+        "final_dist_m": 0.479
+      },
+      {
+        "seed": 107,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 108,
+        "outcome": "GOAL REACHED",
+        "steps": 165,
+        "time_s": 33.0,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 109,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 110,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 111,
+        "outcome": "GOAL REACHED",
+        "steps": 165,
+        "time_s": 33.0,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 112,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 113,
+        "outcome": "GOAL REACHED",
+        "steps": 165,
+        "time_s": 33.0,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 114,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 115,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 116,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 117,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 118,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 119,
+        "outcome": "GOAL REACHED",
+        "steps": 165,
+        "time_s": 33.0,
+        "final_dist_m": 0.346
+      }
+    ]
+  },
+  "MEDIUM": {
+    "episodes": 20,
+    "success_count": 10,
+    "success_rate_pct": 50.0,
+    "collision_count": 4,
+    "collision_rate_pct": 20.0,
+    "timeout_count": 6,
+    "timeout_rate_pct": 30.0,
+    "mean_time_to_goal_s": 33.46,
+    "episodes_detail": [
+      {
+        "seed": 100,
+        "outcome": "GOAL REACHED",
+        "steps": 182,
+        "time_s": 36.4,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 101,
+        "outcome": "COLLISION",
+        "steps": 59,
+        "time_s": 11.8,
+        "final_dist_m": 13.557
+      },
+      {
+        "seed": 102,
+        "outcome": "TIMEOUT",
+        "steps": 360,
+        "time_s": 72.0,
+        "final_dist_m": 12.354
+      },
+      {
+        "seed": 103,
+        "outcome": "GOAL REACHED",
+        "steps": 166,
+        "time_s": 33.2,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 104,
+        "outcome": "GOAL REACHED",
+        "steps": 176,
+        "time_s": 35.2,
+        "final_dist_m": 0.31
+      },
+      {
+        "seed": 105,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 106,
+        "outcome": "TIMEOUT",
+        "steps": 360,
+        "time_s": 72.0,
+        "final_dist_m": 13.088
+      },
+      {
+        "seed": 107,
+        "outcome": "COLLISION",
+        "steps": 59,
+        "time_s": 11.8,
+        "final_dist_m": 13.437
+      },
+      {
+        "seed": 108,
+        "outcome": "TIMEOUT",
+        "steps": 360,
+        "time_s": 72.0,
+        "final_dist_m": 3.769
+      },
+      {
+        "seed": 109,
+        "outcome": "TIMEOUT",
+        "steps": 360,
+        "time_s": 72.0,
+        "final_dist_m": 2.989
+      },
+      {
+        "seed": 110,
+        "outcome": "TIMEOUT",
+        "steps": 360,
+        "time_s": 72.0,
+        "final_dist_m": 6.088
+      },
+      {
+        "seed": 111,
+        "outcome": "GOAL REACHED",
+        "steps": 165,
+        "time_s": 33.0,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 112,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 113,
+        "outcome": "GOAL REACHED",
+        "steps": 165,
+        "time_s": 33.0,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 114,
+        "outcome": "TIMEOUT",
+        "steps": 360,
+        "time_s": 72.0,
+        "final_dist_m": 9.137
+      },
+      {
+        "seed": 115,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 116,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 117,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 118,
+        "outcome": "COLLISION",
+        "steps": 287,
+        "time_s": 57.4,
+        "final_dist_m": 6.607
+      },
+      {
+        "seed": 119,
+        "outcome": "COLLISION",
+        "steps": 45,
+        "time_s": 9.0,
+        "final_dist_m": 15.371
+      }
+    ]
+  },
+  "HARD": {
+    "episodes": 20,
+    "success_count": 3,
+    "success_rate_pct": 15.0,
+    "collision_count": 10,
+    "collision_rate_pct": 50.0,
+    "timeout_count": 7,
+    "timeout_rate_pct": 35.0,
+    "mean_time_to_goal_s": 32.87,
+    "episodes_detail": [
+      {
+        "seed": 100,
+        "outcome": "COLLISION",
+        "steps": 38,
+        "time_s": 7.6,
+        "final_dist_m": 16.228
+      },
+      {
+        "seed": 101,
+        "outcome": "COLLISION",
+        "steps": 60,
+        "time_s": 12.0,
+        "final_dist_m": 13.437
+      },
+      {
+        "seed": 102,
+        "outcome": "COLLISION",
+        "steps": 24,
+        "time_s": 4.8,
+        "final_dist_m": 17.817
+      },
+      {
+        "seed": 103,
+        "outcome": "GOAL REACHED",
+        "steps": 166,
+        "time_s": 33.2,
+        "final_dist_m": 0.294
+      },
+      {
+        "seed": 104,
+        "outcome": "TIMEOUT",
+        "steps": 290,
+        "time_s": 58.0,
+        "final_dist_m": 9.275
+      },
+      {
+        "seed": 105,
+        "outcome": "COLLISION",
+        "steps": 44,
+        "time_s": 8.8,
+        "final_dist_m": 15.615
+      },
+      {
+        "seed": 106,
+        "outcome": "COLLISION",
+        "steps": 47,
+        "time_s": 9.4,
+        "final_dist_m": 15.005
+      },
+      {
+        "seed": 107,
+        "outcome": "COLLISION",
+        "steps": 55,
+        "time_s": 11.0,
+        "final_dist_m": 13.917
+      },
+      {
+        "seed": 108,
+        "outcome": "TIMEOUT",
+        "steps": 290,
+        "time_s": 58.0,
+        "final_dist_m": 8.882
+      },
+      {
+        "seed": 109,
+        "outcome": "TIMEOUT",
+        "steps": 290,
+        "time_s": 58.0,
+        "final_dist_m": 2.989
+      },
+      {
+        "seed": 110,
+        "outcome": "COLLISION",
+        "steps": 70,
+        "time_s": 14.0,
+        "final_dist_m": 13.557
+      },
+      {
+        "seed": 111,
+        "outcome": "TIMEOUT",
+        "steps": 290,
+        "time_s": 58.0,
+        "final_dist_m": 1.299
+      },
+      {
+        "seed": 112,
+        "outcome": "GOAL REACHED",
+        "steps": 163,
+        "time_s": 32.6,
+        "final_dist_m": 0.407
+      },
+      {
+        "seed": 113,
+        "outcome": "COLLISION",
+        "steps": 56,
+        "time_s": 11.2,
+        "final_dist_m": 13.917
+      },
+      {
+        "seed": 114,
+        "outcome": "TIMEOUT",
+        "steps": 290,
+        "time_s": 58.0,
+        "final_dist_m": 9.137
+      },
+      {
+        "seed": 115,
+        "outcome": "COLLISION",
+        "steps": 51,
+        "time_s": 10.2,
+        "final_dist_m": 14.52
+      },
+      {
+        "seed": 116,
+        "outcome": "GOAL REACHED",
+        "steps": 164,
+        "time_s": 32.8,
+        "final_dist_m": 0.346
+      },
+      {
+        "seed": 117,
+        "outcome": "TIMEOUT",
+        "steps": 290,
+        "time_s": 58.0,
+        "final_dist_m": 3.119
+      },
+      {
+        "seed": 118,
+        "outcome": "TIMEOUT",
+        "steps": 290,
+        "time_s": 58.0,
+        "final_dist_m": 8.882
+      },
+      {
+        "seed": 119,
+        "outcome": "COLLISION",
+        "steps": 47,
+        "time_s": 9.4,
+        "final_dist_m": 15.371
+      }
+    ]
+  }
+}
