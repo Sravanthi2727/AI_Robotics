@@ -1,6 +1,9 @@
 scenario,difficulty,episodes_tested,success_rate_pct,collision_rate_pct,timeout_rate_pct,mean_time_to_goal_s
 mallmate,MEDIUM,20,5.0,75.0,20.0,19.8
 mallmate,HARD,20,0.0,85.0,15.0,0.0
+medirunner,EASY (smoke test N=1),1,100.0,0.0,0.0,30.6
+medirunner,MEDIUM (smoke test N=1),1,0.0,100.0,0.0,16.0
+medirunner,HARD (smoke test N=1),1,0.0,100.0,0.0,17.6
 medirunner,MEDIUM,20,0.0,100.0,0.0,0.0
 medirunner,HARD,20,0.0,100.0,0.0,0.0
 kiranakart,MEDIUM,20,0.0,60.0,40.0,0.0
