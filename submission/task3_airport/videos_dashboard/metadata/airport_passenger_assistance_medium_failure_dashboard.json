@@ -1,0 +1,22 @@
+{
+  "file": "airport_passenger_assistance_medium_failure_dashboard.mp4",
+  "scenario": "airport_passenger_assistance",
+  "difficulty": "MEDIUM",
+  "seed": 118,
+  "outcome": "COLLISION",
+  "status_badge": "COLLISION",
+  "steps": 287,
+  "sim_time": 57.4,
+  "final_dist": 6.607,
+  "duration": 30.2,
+  "total_frames": 302,
+  "ready_frames": 5,
+  "hold_frames": 10,
+  "fps": 10,
+  "resolution": [
+    1600,
+    900
+  ],
+  "pacing": "2.0x (Fast)",
+  "policy": "AIRPORT NAVIGATION (AirportNavigationController deterministic reactive planner)"
+}

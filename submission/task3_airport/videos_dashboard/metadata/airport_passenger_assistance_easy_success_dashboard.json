@@ -1,0 +1,22 @@
+{
+  "file": "airport_passenger_assistance_easy_success_dashboard.mp4",
+  "scenario": "airport_passenger_assistance",
+  "difficulty": "EASY",
+  "seed": 100,
+  "outcome": "GOAL_REACHED",
+  "status_badge": "GOAL REACHED",
+  "steps": 164,
+  "sim_time": 32.8,
+  "final_dist": 0.346,
+  "duration": 17.9,
+  "total_frames": 179,
+  "ready_frames": 5,
+  "hold_frames": 10,
+  "fps": 10,
+  "resolution": [
+    1600,
+    900
+  ],
+  "pacing": "2.0x (Fast)",
+  "policy": "AIRPORT NAVIGATION (AirportNavigationController deterministic reactive planner)"
+}
