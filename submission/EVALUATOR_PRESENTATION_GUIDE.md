@@ -4,7 +4,7 @@
 **Department:** Computer Science & Engineering Department  
 **Course:** CS359: Artificial Intelligence for Robotics (B.Tech CSE IIIrd Year)  
 **Author / Presenter:** Shriya Siddesh  
-**Git Branch:** `shriya` | **Latest Verified Commit:** `9e50fee` | **Total Test Suite:** 28 / 28 PASS  
+**Git Branch:** `shriya` | **Latest Verified Commit:** `c51358f` | **Total Test Suite:** 56 / 56 PASS  
 
 ---
 
@@ -15,7 +15,7 @@
 > *In this project, we explored and extended the ETH Zurich **NavRep** framework for autonomous mobile robot navigation across three progressive tasks:*
 > 1. *In **Task 1**, we containerized the entire legacy Python 3.6 / TensorFlow 1.14 / ROS stack using Docker, Mesa 3D OpenGL 3.3 software rendering, and Xvfb virtual displays to achieve 100% reproducible cross-platform execution on modern macOS and Linux without dependency conflicts.*
 > 2. *In **Task 2**, we benchmarked all 11 existing ETH Zurich simulation scenarios across 20-seed sweeps, diagnosed upstream rendering and policy limitations, and recorded 22 verified demonstration videos with color-coded HUD outcome badges.*
-> 3. *In **Task 3**, we designed and implemented practical, safety-critical real-world scenarios: the primary **Library Book Collection Robot** (navigating narrow $1.8\text{ m}$ stack aisles and reading halls) and the integrated **Grand Hotel Room Service Delivery Robot** (navigating luxury guest corridors and avoiding luggage carts and housekeeping staff). To solve the policy limit-cycles inherent to narrow corridors, I built a hybrid architecture combining **global occupancy-grid $A^*$ path planning** with **dynamic predictive collision avoidance (Time-to-Closest-Approach yielding)**, backed by a dedicated **graphical demonstration interface** with **live interactive goal selection, dynamic $A^*$ replanning, and instant dual-scenario switching**.*
+> 3. *In **Task 3**, we designed and implemented practical, safety-critical real-world scenarios: the primary **Library Book Collection Robot** (navigating narrow $1.8\text{ m}$ stack aisles and reading halls), the integrated **Grand Hotel Room Service Delivery Robot** (navigating luxury guest corridors and avoiding luggage carts and housekeeping staff), and the **MediRunner Hospital Medicine Delivery Robot** (navigating clinical corridors with high-speed emergency gurney yielding, triage bottleneck traversal, and patient room deliveries). To solve the policy limit-cycles inherent to narrow corridors, I built a hybrid architecture combining **global occupancy-grid $A^*$ path planning** with **dynamic predictive collision avoidance (Time-to-Closest-Approach yielding)**, backed by a dedicated **graphical demonstration interface** with **live interactive goal selection, dynamic $A^*$ replanning, and instant 3-scenario switching**.*
 > 
 > *Sir, allow me to walk you through each task with live output proof and terminal execution."*
 
@@ -33,9 +33,9 @@ git checkout shriya
 # 2. Start the containerized desktop environment (maps ports 5900 and 6080)
 docker compose up -d
 
-# 3. Run automated smoke tests and 28-test verification suite
+# 3. Run automated smoke tests and 56-test verification suite
 docker exec navrep_desktop python scripts_custom/smoke_test.py
-docker exec navrep_desktop python -m unittest tests/test_library_scenario.py tests/test_custom_scenarios.py
+docker exec navrep_desktop python -m unittest tests/test_library_scenario.py tests/test_custom_scenarios.py tests/test_hospital_controller.py
 
 # 4. Open the live GUI in your web browser:
 # Navigate to: http://localhost:6080/vnc_lite.html?scale=true
@@ -172,6 +172,28 @@ docker exec navrep_desktop python -m unittest tests/test_library_scenario.py tes
 
 ---
 
+### 3.3 Scenario 3: "MediRunner Hospital Medicine Delivery Robot" (Integrated Scenario — Shreya)
+- **Narrative:** An autonomous hospital delivery robot transports critical pharmaceuticals and blood samples from the Central Pharmacy Dispenser to the Intensive Care Unit (ICU), navigating around urgent clinical staff, frail patients with walker frames, and yielding right-of-way to high-speed emergency gurneys.
+- **Physical Dimensions:**
+  - Floor Area: $24.0\text{ m} \times 8.0\text{ m} = 192.0\text{ m}^2$ ($X \in [-12, 12]\text{ m}, Y \in [-4, 4]\text{ m}$).
+  - Start Pose: $(-10.5, 0.0, 0.0\text{ rad})$ at Central Pharmacy Dispenser.
+  - Goal Pose: $(10.5, 0.0)$ at ICU Acute Care Ward Entrance.
+  - Direct Separation: $21.0\text{ m}$.
+- **Architectural & Bottleneck Constraints:**
+  - Patient Rooms (North & South): `Room 101: Post-Op`, `Room 102: Cardiology`, `Room 103: Pediatrics`, `Room 104: Trauma Care`.
+  - Recessed Pull-In Alcoves: Safe yielding bays at $X \in \{-2.4, 2.4\}\text{ m}$.
+  - Central Triage Nurse Station: $4.0\text{ m} \times 1.6\text{ m}$ structural obstacle at $(0.0, 1.2)$. Leaves only $0.40\text{ m}$ clearance to the north (impassable), requiring global $A^*$ routing through the southern corridor ($y = -0.60\text{ m}$, $1.10\text{ m}$ clear span).
+- **Dynamic Hazards & Emergency Yielding:**
+  - High-Speed Emergency Gurney: Stretcher moving westbound at $1.65\text{ m/s}$ ($r = 0.65\text{ m}$) with dual pulsating beacon halos.
+  - Clinical Staff & Frail Patients: Fast nurses in scrubs ($1.05\text{ m/s}$) and geriatric patients with 4-wheel assistive walkers ($0.35\text{ m/s}$).
+  - Controller Response: CPA state machine identifies oncoming emergency trajectory, pulls the robot safely into North Alcove 1 at $(-2.40, 1.25)$ to yield, then resumes transit to the ICU.
+- **Headless Video Generation:**
+  ```bash
+  docker exec navrep_desktop python scripts_custom/record_hospital_demo.py
+  ```
+
+---
+
 ## 4. The Live Graphical VNC Demonstration Walkthrough
 
 ### 4.1 How to Open the Interface
@@ -190,16 +212,20 @@ http://localhost:6080/vnc_lite.html?scale=true
   ```bash
   docker exec -d -e DISPLAY=:99 navrep_desktop python /workspace/submission/task3_custom/gui/library_gui.py --scenario hotelroomservice
   ```
+- **To Launch Hospital Delivery Directly:**
+  ```bash
+  docker exec -d -e DISPLAY=:99 navrep_desktop python /workspace/submission/task3_custom/gui/library_gui.py --scenario hospital
+  ```
 
 ### 4.3 Interactive Walkthrough Script (Step-by-Step for Evaluator)
 
 #### Step 1: Explain the Realistic Environment & Scenario Switcher
-> *"Sir, notice the top-right panel features an **Active Robot Scenario** toggle. With one click, we can switch between **[1] Institutional Library Book Collection** and **[2] Grand Hotel Room Service Delivery**. The canvas renders realistic floorplans: parquet wood for the library, sapphire carpet and mahogany doors for the hotel."*
+> *"Sir, notice the top-right panel features an **Active Robot Scenario** switcher. With one click, we can toggle between **[1] Institutional Library Book Collection**, **[2] Grand Hotel Room Service Delivery**, and **[3] MediRunner Hospital Medicine Delivery**. The canvas renders realistic floorplans: parquet wood for the library, sapphire carpet and mahogany doors for the hotel, and antiseptic porcelain tiles with a central triage desk featuring live animated green ECG waveforms and emergency gurney hazards for the hospital."*
 
 #### Step 2: Run the Full Demonstration (`RUN FULL DEMONSTRATION`)
 Click the green **`[>] RUN FULL DEMONSTRATION`** button:
 1. **Watch the $A^*$ Wavefront:**  
-   The cyan wavefront rapidly evaluates $24,000$ cells with $0.48\text{ m}$ safety inflation in $131\text{ ms}$, synthesizing an optimal collision-free corridor skeleton.
+   The cyan wavefront rapidly evaluates grid cells with $0.48\text{ m}$ safety inflation in $\sim 130\text{ ms}$, synthesizing an optimal collision-free corridor skeleton.
 2. **Watch the Autonomous Navigation:**  
    The robot departs along the green path. Approaching human patrons switches telemetry to `PREDICTIVE YIELDING`. The robot calculates Time-to-Closest-Approach, brakes to a complete halt without creeping, lets the pedestrian pass, and smoothly resumes until docking.
 
@@ -208,7 +234,7 @@ Click the green **`[>] RUN FULL DEMONSTRATION`** button:
 
 1. Click **`[+] SELECT NEW GOAL`**. Live coordinates and crosshairs hover under your cursor.
 2. **Demonstrate Safety Rejection:** Click inside **Stack A2** or inside a table. Show the red error: `"Invalid Goal: Position inside obstacle or lacks 0.35m clearance"`. The safety layer refuses unsafe points!
-3. **Set New Goal & Replan:** Click anywhere in free corridor space (or select **`Mathematics & Statistics Stack (A3)`** or **`Suite 202`** from the Preset menu). Click **`REPLAN ROUTE`**. Watch the $A^*$ search synthesize a brand-new route from the robot's *current location*!
+3. **Set New Goal & Replan:** Click anywhere in free corridor space (or select **`Mathematics & Statistics Stack (A3)`**, **`Suite 202`**, or **`ICU Acute Care Ward`** from the Preset menu). Click **`REPLAN ROUTE`**. Watch the $A^*$ search synthesize a brand-new route from the robot's *current location*!
 4. Click **`Start Navigation`** $\to$ the robot follows the newly generated route to the new target.
 
 #### Step 4: Show the 20-Seed Benchmark Table
@@ -241,20 +267,25 @@ Click the green **`[>] RUN FULL DEMONSTRATION`** button:
 
 | Deliverable Required | Exact Submission File Path | Verification Status |
 |---|---|---|
-| **1. Modified Source Code in ZIP** | `submission/navrep_modified_source.zip` | **Rebuilt & Verified** (1.0 MB, includes all Task 1, 2, and 3 code) |
+| **1. Modified Source Code in ZIP** | `submission/navrep_modified_source.zip` | **Rebuilt & Verified** (Includes all Task 1, 2, and 3 code) |
 | **2. Evaluator Presentation Guide** | `submission/EVALUATOR_PRESENTATION_GUIDE.md` | **Complete** (Full presentation pitch & defense script) |
 | **3. Project Reproduction Guide** | `submission/COMPLETE_PROJECT_RUN_AND_EVALUATION_GUIDE.md` | **Complete** (End-to-end beginner reproduction manual) |
 | **4. Publication-Ready PDF** | `submission/SVNIT_CS359_EVALUATOR_PRESENTATION_GUIDE.pdf` | **Generated** (Publication-styled department document) |
 | **5. Scenario Documentation** | `submission/task3_custom/LIBRARY_BOOK_COLLECTION.md` | **Complete** (463 lines, full engineering report & math specs) |
-| | `submission/task3_custom/SCENARIO_DESCRIPTIONS.md` | **Complete** (308 lines, multi-scenario specifications) |
+| | `submission/task3_custom/SCENARIO_DESCRIPTIONS.md` | **Complete** (Multi-scenario specifications) |
 | **6. Task 3 Library Videos** | `submission/task3_custom/videos/library_easy.mp4` | **Verified** (640x640 @ 12 fps, 21.5s, clean goal reach) |
 | | `submission/task3_custom/videos/library_medium.mp4` | **Verified** (640x640 @ 12 fps, 44.7s, predictive yielding) |
 | | `submission/task3_custom/videos/library_hard.mp4` | **Verified** (640x640 @ 12 fps, 12.8s, dense crowd avoidance) |
 | **7. Task 3 Hotel Videos** | `submission/task3_custom/videos/hotelroomservice_easy.mp4` | **Verified** (EASY tier room service delivery) |
 | | `submission/task3_custom/videos/hotelroomservice_medium.mp4` | **Verified** (MEDIUM tier room service delivery) |
 | | `submission/task3_custom/videos/hotelroomservice_hard.mp4` | **Verified** (HARD tier room service delivery) |
-| **8. Task 2 Videos (22 Videos)** | `submission/task2_videos/*.mp4` | **All 22 PASS** via `scripts_custom/verify_videos.py` |
-| **9. Git Repository & Checkpoint** | Branch `shriya` at Commit `9e50fee` | **Pushed to GitHub** (`origin/shriya`), clean working tree |
+| **8. Task 3 Hospital Videos** | `submission/task3_custom/videos/hospital_easy.mp4` | **Verified** (EASY tier emergency medicine delivery) |
+| | `submission/task3_custom/videos/hospital_medium.mp4` | **Verified** (MEDIUM tier emergency medicine delivery) |
+| | `submission/task3_custom/videos/hospital_hard.mp4` | **Verified** (HARD tier emergency medicine delivery) |
+| **9. Task 3 Video Index & Metrics** | `submission/task3_custom/videos/VIDEO_INDEX.md`, `metrics_custom.csv` | **Standardized** (Exact task 2 schema alignment & 20-seed benchmarks) |
+| **10. Task 2 Videos (22 Videos)** | `submission/task2_videos/*.mp4` | **All 22 PASS** via `scripts_custom/verify_videos.py` |
+| **11. Unit Test Suite (56 Tests)** | `tests/test_library_scenario.py`, `tests/test_custom_scenarios.py`, `tests/test_hospital_controller.py` | **56 / 56 PASS** in ~12s |
+| **12. Git Repository & Checkpoint** | Branch `shriya` (merged with `origin/shreya`) | **Unified 3-Scenario Live Demonstration GUI** |
 
 ### Final Closing Line for Your Evaluator
-> *"Sir, all modified code is committed on branch `shriya` (commit `9e50fee`), pushed to GitHub, packaged in `navrep_modified_source.zip`, and verified with 28 passing unit tests, full quantitative benchmarks, and a live demonstration interface. Thank you, and I am happy to answer any further questions."*
+> *"Sir, all modified code is committed on branch `shriya`, merged with `origin/shreya`, packaged in `navrep_modified_source.zip`, and verified with 56 passing unit tests, full quantitative benchmarks, and a live demonstration interface covering Institutional Library, Grand Hotel, and Hospital Delivery scenarios. Thank you, and I am happy to answer any further questions."*

@@ -381,6 +381,7 @@ class AStarPlanner(object):
 # Module-level cached planner singleton for high performance
 _CACHED_PLANNER = None
 _CACHED_HOTEL_PLANNER = None
+_CACHED_HOSPITAL_PLANNER = None
 
 LIBRARY_PRESET_DESTINATIONS = [
     ("Computer Science Stack (A1)", (-5.0, 3.5)),
@@ -396,6 +397,15 @@ HOTEL_PRESET_DESTINATIONS = [
     ("Executive Lobby Lounge", (-4.5, -2.5)),
     ("Suite 202 (Deluxe Double)", (0.0, 2.2)),
     ("Housekeeping & Linen Depot", (7.0, 4.5)),
+]
+
+HOSPITAL_PRESET_DESTINATIONS = [
+    ("ICU Nurse Station (East Wing Goal)", (10.5, 0.0)),
+    ("Central Pharmacy (West Dispatch)", (-10.5, 0.0)),
+    ("North Alcove 1 (Yield Station)", (-2.4, 1.25)),
+    ("South Alcove 2 (Trauma Recess)", (1.8, -2.4)),
+    ("Triage Corridor Choke-Point", (0.0, -0.6)),
+    ("Patient Room 102 (Cardiology)", (2.2, 1.25)),
 ]
 
 def get_library_planner():
@@ -454,3 +464,31 @@ def validate_hotel_goal(goal_xy):
     planner = get_hotel_planner()
     cfg = get_scenario_config('hotelroomservice')
     return planner.occ_grid.validate_goal(goal_xy[0], goal_xy[1], min_clearance=0.35, static_obstacles=cfg.static_obstacles)
+
+def get_hospital_planner():
+    """Returns or initializes the cached AStarPlanner instance for Hospital (MediRunner)."""
+    global _CACHED_HOSPITAL_PLANNER
+    if _CACHED_HOSPITAL_PLANNER is None:
+        cfg = get_scenario_config('medirunner')
+        occ = OccupancyGrid(world_bounds=cfg.world_bounds, resolution=0.10, inflation_radius=0.38)
+        occ.build_from_obstacles(cfg.static_obstacles)
+        _CACHED_HOSPITAL_PLANNER = AStarPlanner(occ)
+    return _CACHED_HOSPITAL_PLANNER
+
+def get_hospital_a_star_plan():
+    """Returns the computed A* plan for the MediRunner Hospital Delivery scenario."""
+    planner = get_hospital_planner()
+    cfg = get_scenario_config('medirunner')
+    return planner.plan(cfg.robot_start[:2], cfg.robot_goal[:2])
+
+def replan_hospital_route(start_xy, goal_xy):
+    """Computes an A* plan from start_xy to goal_xy for MediRunner scenario."""
+    planner = get_hospital_planner()
+    return planner.plan(start_xy[:2], goal_xy[:2])
+
+def validate_hospital_goal(goal_xy):
+    """Validates goal_xy against hospital world bounds and static obstacles."""
+    planner = get_hospital_planner()
+    cfg = get_scenario_config('medirunner')
+    return planner.occ_grid.validate_goal(goal_xy[0], goal_xy[1], min_clearance=0.35, static_obstacles=cfg.static_obstacles)
+

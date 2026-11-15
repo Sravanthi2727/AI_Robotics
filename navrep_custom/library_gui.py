@@ -82,6 +82,10 @@ from navrep_custom.library_book_collection import (
     LibraryNavigationController,
 )
 from navrep_custom.hotel_room_service import HotelNavigationController
+from navrep_custom.hospital_delivery import (
+    HospitalNavigationController,
+    sync_and_rasterize_hospital_sim,
+)
 from navrep_custom.library_planner import (
     OccupancyGrid,
     AStarPlanner,
@@ -93,6 +97,10 @@ from navrep_custom.library_planner import (
     replan_hotel_route,
     validate_hotel_goal,
     HOTEL_PRESET_DESTINATIONS,
+    get_hospital_a_star_plan,
+    replan_hospital_route,
+    validate_hospital_goal,
+    HOSPITAL_PRESET_DESTINATIONS,
 )
 from crowd_sim.envs.utils.info import ReachGoal, Collision, CollisionOtherAgent, Timeout
 
@@ -187,14 +195,50 @@ HOTEL_ROBOT_CLOCHE = (60, 210, 245)
 HOTEL_ROBOT_HANDLE = (20, 140, 190)
 HOTEL_ROBOT_AMBER = (0, 190, 255)
 
+# Hospital Scenario Clinical Medical Palette & Metadata
+HOSPITAL_FLOOR_BASE = (248, 250, 252)      # Antiseptic clinical porcelain / vinyl tiles
+HOSPITAL_FLOOR_SEAM = (220, 228, 235)      # Tile grout seams
+HOSPITAL_WALL_DARK = (45, 55, 65)          # Architectural corridor boundary walls
+HOSPITAL_WALL_BORDER = (25, 35, 45)        # Wall border
+HOSPITAL_BASEBOARD = (38, 50, 56)          # Baseboard
+HOSPITAL_CROSS_RED = (40, 40, 225)         # Medical Red Cross
+HOSPITAL_CROSS_CYAN = (200, 150, 0)        # Medical Cyan accent
+HOSPITAL_TRIAGE_DESK = (165, 180, 195)     # Triage counter laminate
+HOSPITAL_TRIAGE_TOP = (195, 210, 225)      # Triage counter surface
+HOSPITAL_TRIAGE_BORDER = (120, 135, 150)
+HOSPITAL_BED_FRAME = (130, 140, 150)
+HOSPITAL_BED_LINEN = (255, 255, 255)
+HOSPITAL_BED_PILLOW = (225, 238, 245)
+HOSPITAL_BED_STRIPE = (210, 170, 70)       # Cyan medical blanket stripe
+HOSPITAL_ECG_SCREEN = (25, 30, 35)
+HOSPITAL_ECG_GREEN = (60, 230, 100)
+HOSPITAL_ALCOVE_HAZARD = (40, 200, 240)    # Hazard refuge line
+HOSPITAL_GURNEY_FRAME = (85, 90, 95)
+HOSPITAL_GURNEY_PAD = (215, 140, 50)       # Emergency trauma mattress
+HOSPITAL_GURNEY_FLASH = (20, 30, 240)      # High-intensity emergency beacon
+ROLE_NURSE = (175, 145, 0)                 # Purposeful Nurse (Teal/Cyan scrubs in BGR)
+ROLE_PATIENT_WALKER = (220, 180, 130)      # Frail Patient with walker
+ROLE_VISITOR = (160, 120, 140)             # Visitor
+ROLE_GURNEY = (30, 30, 220)                # Emergency Gurney
+HOSPITAL_ROBOT_WHITE = (250, 252, 255)     # Clean clinical AMR body
+HOSPITAL_ROBOT_ACCENT = (210, 150, 0)      # Clinical cyan trim
+
+
 
 class LibraryDemoApp(object):
     """Main Tkinter Demonstration Application for Task 3."""
 
     def __init__(self, root, default_scenario="library"):
+        if default_scenario == "hospital":
+            default_scenario = "medirunner"
         self.active_scenario = default_scenario
         self.root = root
-        self.root.title("LIBRARY BOOK COLLECTION ROBOT — SVNIT CS359: AI for Robotics")
+        title_str = "AUTONOMOUS MOBILE ROBOT NAVIGATION — SVNIT CS359: AI for Robotics"
+        if self.active_scenario == "hotelroomservice":
+            title_str = "GRAND HOTEL ROOM SERVICE ROBOT — SVNIT CS359: AI for Robotics"
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            title_str = "MEDIRUNNER HOSPITAL MEDICINE DELIVERY ROBOT — SVNIT CS359: AI for Robotics"
+        self.root.title(title_str)
         self.root.geometry("1260x780")
         self.root.minsize(1180, 740)
         self.root.configure(bg=THEME_BG)
@@ -256,6 +300,18 @@ class LibraryDemoApp(object):
             self.orig_x = int(20 + (-self.world_min_x) * self.scale_px)
             self.orig_y = int(self.canvas_height / 2.0)
             self.original_goal = [10.0, 0.0]
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            self.world_min_x = -12.5
+            self.world_max_x = 12.5
+            self.world_min_y = -4.5
+            self.world_max_y = 4.5
+            self.scale_px = min(
+                (self.canvas_width - 40) / (self.world_max_x - self.world_min_x),
+                (self.canvas_height - 40) / (self.world_max_y - self.world_min_y)
+            )
+            self.orig_x = int(20 + (-self.world_min_x) * self.scale_px)
+            self.orig_y = int(self.canvas_height / 2.0)
+            self.original_goal = [10.5, 0.0]
         else:
             self.world_min_x = -10.5
             self.world_max_x = 7.5
@@ -294,6 +350,15 @@ class LibraryDemoApp(object):
                 self.planner_data = get_hotel_a_star_plan()
                 self.active_a_star_waypoints = [list(wp) for wp in self.planner_data['waypoints']]
                 self.ctrl = HotelNavigationController(waypoints=self.active_a_star_waypoints)
+            elif self.active_scenario in ["medirunner", "hospital"]:
+                self.planner_data = get_hospital_a_star_plan()
+                self.active_a_star_waypoints = [list(wp) for wp in self.planner_data['waypoints']]
+                cfg = self.cfg if self.cfg is not None else get_scenario_config("medirunner")
+                self.ctrl = HospitalNavigationController(
+                    static_obstacles=cfg.static_obstacles,
+                    world_bounds=cfg.world_bounds,
+                    waypoints=self.active_a_star_waypoints
+                )
             else:
                 self.planner_data = get_library_a_star_plan()
                 self.active_a_star_waypoints = [list(wp) for wp in self.planner_data['waypoints']]
@@ -304,6 +369,8 @@ class LibraryDemoApp(object):
             self.active_a_star_waypoints = None
             if self.active_scenario == "hotelroomservice":
                 self.ctrl = HotelNavigationController()
+            elif self.active_scenario in ["medirunner", "hospital"]:
+                self.ctrl = HospitalNavigationController()
             else:
                 self.ctrl = LibraryNavigationController()
 
@@ -323,23 +390,35 @@ class LibraryDemoApp(object):
         title_frame = tk.Frame(header, bg=THEME_CARD_BG)
         title_frame.pack(side="left", padx=16, pady=6)
 
-        lbl_title = tk.Label(
+        initial_title = "LIBRARY BOOK COLLECTION ROBOT"
+        initial_sub = "Task 3: Autonomous Mobile Navigation in Institutional Library | Author: Shriya (SVNIT Surat)"
+        initial_mode = "MODE: LIBRARY VIEW"
+        if self.active_scenario == "hotelroomservice":
+            initial_title = "GRAND HOTEL ROOM SERVICE ROBOT"
+            initial_sub = "Task 3: Autonomous Room Service Delivery | Luxury Hotel Guest Corridors"
+            initial_mode = "MODE: HOTEL VIEW"
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            initial_title = "MEDIRUNNER HOSPITAL MEDICINE DELIVERY ROBOT"
+            initial_sub = "Task 3: Autonomous Clinical Corridor Navigation | Emergency Gurney & Alcove Yielding"
+            initial_mode = "MODE: HOSPITAL VIEW"
+
+        self.lbl_title = tk.Label(
             title_frame,
-            text="LIBRARY BOOK COLLECTION ROBOT",
+            text=initial_title,
             font=("Helvetica", 15, "bold"),
             fg=THEME_FG_BRIGHT,
             bg=THEME_CARD_BG
         )
-        lbl_title.pack(anchor="w")
+        self.lbl_title.pack(anchor="w")
 
-        lbl_sub = tk.Label(
+        self.lbl_subtitle = tk.Label(
             title_frame,
-            text="Task 3: Autonomous Mobile Navigation in Institutional Library | Author: Shriya (SVNIT Surat)",
+            text=initial_sub,
             font=("Helvetica", 9),
             fg=THEME_ACCENT_BLUE,
             bg=THEME_CARD_BG
         )
-        lbl_sub.pack(anchor="w")
+        self.lbl_subtitle.pack(anchor="w")
 
         # Badges on right side
         badge_frame = tk.Frame(header, bg=THEME_CARD_BG)
@@ -347,7 +426,7 @@ class LibraryDemoApp(object):
 
         self.lbl_header_mode = tk.Label(
             badge_frame,
-            text="MODE: LIBRARY VIEW",
+            text=initial_mode,
             font=("Helvetica", 10, "bold"),
             fg="#21252b",
             bg="#80deea",
@@ -391,9 +470,16 @@ class LibraryDemoApp(object):
 
         canvas_header = tk.Frame(left_frame, bg=THEME_CARD_BG, height=28)
         canvas_header.pack(fill="x", side="top", padx=2, pady=2)
+
+        canvas_title_text = "INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL"
+        if self.active_scenario == "hotelroomservice":
+            canvas_title_text = "GRAND HOTEL FLOOR PLAN (860x640) -- GUEST CORRIDORS & SUITES"
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            canvas_title_text = "HOSPITAL WING FLOOR PLAN (860x640) -- PHARMACY, CORRIDOR, TRIAGE & ICU"
+
         self.lbl_canvas_title = tk.Label(
             canvas_header,
-            text="INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL",
+            text=canvas_title_text,
             font=("Helvetica", 9, "bold"),
             fg=THEME_FG,
             bg=THEME_CARD_BG
@@ -449,6 +535,17 @@ class LibraryDemoApp(object):
             command=lambda: self.switch_scenario("hotelroomservice")
         )
         self.btn_scen_hotel.pack(fill="x", padx=4, pady=2)
+
+        self.btn_scen_hospital = tk.Button(
+            scen_card,
+            text="[3] MediRunner Hospital Medicine Delivery",
+            font=("Helvetica", 8, "bold"),
+            bg="#0277bd" if self.active_scenario in ["medirunner", "hospital"] else "#263238",
+            fg="white",
+            relief="sunken" if self.active_scenario in ["medirunner", "hospital"] else "raised",
+            command=lambda: self.switch_scenario("medirunner")
+        )
+        self.btn_scen_hospital.pack(fill="x", padx=4, pady=2)
 
         # 1. PRIMARY: Full Demonstration Showcase
         demo_card = tk.LabelFrame(
@@ -599,7 +696,12 @@ class LibraryDemoApp(object):
         lbl_preset = tk.Label(row_g2, text="Preset:", font=("Helvetica", 8, "bold"), fg=THEME_FG, bg=THEME_CARD_BG)
         lbl_preset.pack(side="left", padx=(2, 2))
 
-        active_presets = HOTEL_PRESET_DESTINATIONS if self.active_scenario == "hotelroomservice" else LIBRARY_PRESET_DESTINATIONS
+        if self.active_scenario == "hotelroomservice":
+            active_presets = HOTEL_PRESET_DESTINATIONS
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            active_presets = HOSPITAL_PRESET_DESTINATIONS
+        else:
+            active_presets = LIBRARY_PRESET_DESTINATIONS
         preset_options = [name for name, _ in active_presets]
         self.preset_var = tk.StringVar(value=preset_options[0])
         self.opt_preset = tk.OptionMenu(
@@ -769,7 +871,9 @@ class LibraryDemoApp(object):
     # SIMULATION INITIALIZATION & MODES
     # --------------------------------------------------------------------------
     def switch_scenario(self, scenario_name):
-        """Switches between Library Book Collection and Hotel Room Service scenarios."""
+        """Switches between Library, Hotel Room Service, and MediRunner Hospital scenarios."""
+        if scenario_name == "hospital":
+            scenario_name = "medirunner"
         if scenario_name == self.active_scenario:
             return
 
@@ -783,6 +887,11 @@ class LibraryDemoApp(object):
             self.btn_scen_hotel.configure(
                 bg="#0277bd" if self.active_scenario == "hotelroomservice" else "#263238",
                 relief="sunken" if self.active_scenario == "hotelroomservice" else "raised"
+            )
+        if hasattr(self, 'btn_scen_hospital'):
+            self.btn_scen_hospital.configure(
+                bg="#0277bd" if self.active_scenario in ["medirunner", "hospital"] else "#263238",
+                relief="sunken" if self.active_scenario in ["medirunner", "hospital"] else "raised"
             )
 
         if self.active_scenario == "hotelroomservice":
@@ -803,6 +912,24 @@ class LibraryDemoApp(object):
             self.lbl_subtitle.configure(text="Task 3: Autonomous Room Service Delivery | Luxury Hotel Guest Corridors")
             self.lbl_canvas_title.configure(text="GRAND HOTEL FLOOR PLAN (860x640) -- GUEST CORRIDORS & SUITES")
             active_presets = HOTEL_PRESET_DESTINATIONS
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            self.world_min_x = -12.5
+            self.world_max_x = 12.5
+            self.world_min_y = -4.5
+            self.world_max_y = 4.5
+            self.scale_px = min(
+                (self.canvas_width - 40) / (self.world_max_x - self.world_min_x),
+                (self.canvas_height - 40) / (self.world_max_y - self.world_min_y)
+            )
+            self.orig_x = int(20 + (-self.world_min_x) * self.scale_px)
+            self.orig_y = int(self.canvas_height / 2.0)
+            self.original_goal = [10.5, 0.0]
+            self.selected_goal = None
+            self.selected_goal_label = None
+            self.lbl_title.configure(text="MEDIRUNNER HOSPITAL MEDICINE DELIVERY ROBOT")
+            self.lbl_subtitle.configure(text="Task 3: Autonomous Clinical Corridor Navigation | Emergency Gurney & Alcove Yielding")
+            self.lbl_canvas_title.configure(text="HOSPITAL WING FLOOR PLAN (860x640) -- PHARMACY, CORRIDOR, TRIAGE & ICU")
+            active_presets = HOSPITAL_PRESET_DESTINATIONS
         else:
             self.world_min_x = -10.5
             self.world_max_x = 7.5
@@ -822,7 +949,23 @@ class LibraryDemoApp(object):
             self.lbl_canvas_title.configure(text="INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL")
             active_presets = LIBRARY_PRESET_DESTINATIONS
 
+        if hasattr(self, 'btn_show_env'):
+            if self.active_scenario == "hotelroomservice":
+                self.btn_show_env.configure(text="Show Hotel")
+            elif self.active_scenario in ["medirunner", "hospital"]:
+                self.btn_show_env.configure(text="Show Hospital")
+            else:
+                self.btn_show_env.configure(text="Show Library")
+        if hasattr(self, 'lbl_seq'):
+            if self.active_scenario == "hotelroomservice":
+                self.lbl_seq.configure(text="sequence: View Hotel -> A* Search -> Navigate & Yield")
+            elif self.active_scenario in ["medirunner", "hospital"]:
+                self.lbl_seq.configure(text="sequence: View Hospital -> A* Search -> Navigate & Yield")
+            else:
+                self.lbl_seq.configure(text="sequence: View Library -> A* Search -> Navigate & Yield")
+
         self._rebuild_preset_menu(active_presets)
+        self._compute_a_star_plan()
         self.on_reset_pressed()
 
     def _rebuild_preset_menu(self, preset_list):
@@ -870,6 +1013,34 @@ class LibraryDemoApp(object):
             else:
                 self.ctrl = HotelNavigationController()
             self.ctrl.reset()
+            self.max_steps = 380
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            self.cfg = get_scenario_config("medirunner")
+            self.env = CustomNavRepEncodedEnv(
+                scenario="medirunner",
+                difficulty=self.current_difficulty,
+                gpu=False,
+                silent=True
+            )
+            self.env.reset("medirunner", self.current_difficulty)
+            sync_and_rasterize_hospital_sim(self.env, self.cfg)
+            if self.selected_goal is not None:
+                self.env.soadrl_sim.robot.gx = self.selected_goal[0]
+                self.env.soadrl_sim.robot.gy = self.selected_goal[1]
+            if self.active_a_star_waypoints is not None:
+                self.ctrl = HospitalNavigationController(
+                    static_obstacles=self.cfg.static_obstacles,
+                    world_bounds=self.cfg.world_bounds,
+                    waypoints=self.active_a_star_waypoints
+                )
+            else:
+                self.ctrl = HospitalNavigationController(
+                    static_obstacles=self.cfg.static_obstacles,
+                    world_bounds=self.cfg.world_bounds
+                )
+            self.ctrl.reset()
+            diff_cfg = self.cfg.get_difficulty_config(self.current_difficulty)
+            self.max_steps = diff_cfg.get('time_limit', 350)
         else:
             self.cfg = get_scenario_config("library")
             self.env = CustomNavRepEncodedEnv(
@@ -888,11 +1059,18 @@ class LibraryDemoApp(object):
             else:
                 self.ctrl = LibraryNavigationController()
             self.ctrl.reset()
+            diff_cfg = self.cfg.get_difficulty_config(self.current_difficulty)
+            self.max_steps = diff_cfg.get('time_limit', 380)
 
         self.current_step = 0
         self.trajectory = [list(self.cfg.robot_start[:2])]
         self.terminal_event = None
-        self.nav_state_str = "CRUISING (Stack Aisle 2)"
+        if self.active_scenario in ["medirunner", "hospital"]:
+            self.nav_state_str = "CRUISING (Central Pharmacy Wing)"
+        elif self.active_scenario == "hotelroomservice":
+            self.nav_state_str = "CRUISING (Kitchen Dispatch)"
+        else:
+            self.nav_state_str = "CRUISING (Stack Aisle 2)"
 
         self._update_badges("READY", "#9e9e9e")
         self._update_telemetry(0.0, 0.0)
@@ -902,10 +1080,16 @@ class LibraryDemoApp(object):
         """Resets view mode to clean environment view."""
         self.view_mode = "LIBRARY"
         self.is_full_demo_active = False
-        lbl = "MODE: HOTEL VIEW" if self.active_scenario == "hotelroomservice" else "MODE: LIBRARY VIEW"
+        lbl = "MODE: LIBRARY VIEW"
+        if self.active_scenario == "hotelroomservice":
+            lbl = "MODE: HOTEL VIEW"
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            lbl = "MODE: HOSPITAL VIEW"
         self.lbl_header_mode.configure(text=lbl, bg="#80deea")
         if self.active_scenario == "hotelroomservice":
             self.lbl_canvas_title.configure(text="GRAND HOTEL FLOOR PLAN (860x640) -- GUEST CORRIDORS & SUITES")
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            self.lbl_canvas_title.configure(text="HOSPITAL WING FLOOR PLAN (860x640) -- PHARMACY, CORRIDOR, TRIAGE & ICU")
         else:
             self.lbl_canvas_title.configure(text="INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL")
         self._render_current_frame()
@@ -990,8 +1174,15 @@ class LibraryDemoApp(object):
         """Resets the episode cleanly."""
         self.is_full_demo_active = False
         self.view_mode = "LIBRARY"
-        self.lbl_header_mode.configure(text="MODE: LIBRARY VIEW", bg="#80deea")
-        self.lbl_canvas_title.configure(text="INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL")
+        if self.active_scenario == "hotelroomservice":
+            self.lbl_header_mode.configure(text="MODE: HOTEL VIEW", bg="#80deea")
+            self.lbl_canvas_title.configure(text="GRAND HOTEL FLOOR PLAN (860x640) -- GUEST CORRIDORS & SUITES")
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            self.lbl_header_mode.configure(text="MODE: HOSPITAL VIEW", bg="#80deea")
+            self.lbl_canvas_title.configure(text="HOSPITAL WING FLOOR PLAN (860x640) -- PHARMACY, CORRIDOR, TRIAGE & ICU")
+        else:
+            self.lbl_header_mode.configure(text="MODE: LIBRARY VIEW", bg="#80deea")
+            self.lbl_canvas_title.configure(text="INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL")
         self.reset_simulation()
 
     def on_difficulty_changed(self):
@@ -1059,6 +1250,8 @@ class LibraryDemoApp(object):
         wx, wy = round(wx, 2), round(wy, 2)
         if self.active_scenario == "hotelroomservice":
             valid, reason = validate_hotel_goal((wx, wy))
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            valid, reason = validate_hospital_goal((wx, wy))
         else:
             valid, reason = validate_library_goal((wx, wy))
         if not valid:
@@ -1079,7 +1272,12 @@ class LibraryDemoApp(object):
     def on_preset_destination_selected(self, selection):
         """Handles selection of a destination preset from dropdown."""
         coords = None
-        active_presets = HOTEL_PRESET_DESTINATIONS if self.active_scenario == "hotelroomservice" else LIBRARY_PRESET_DESTINATIONS
+        if self.active_scenario == "hotelroomservice":
+            active_presets = HOTEL_PRESET_DESTINATIONS
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            active_presets = HOSPITAL_PRESET_DESTINATIONS
+        else:
+            active_presets = LIBRARY_PRESET_DESTINATIONS
         for name, pt in active_presets:
             if name == selection:
                 coords = pt
@@ -1089,6 +1287,8 @@ class LibraryDemoApp(object):
 
         if self.active_scenario == "hotelroomservice":
             valid, reason = validate_hotel_goal(coords)
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            valid, reason = validate_hospital_goal(coords)
         else:
             valid, reason = validate_library_goal(coords)
         if not valid:
@@ -1150,6 +1350,8 @@ class LibraryDemoApp(object):
         # Calculate new A* plan from current robot position to goal
         if self.active_scenario == "hotelroomservice":
             new_plan = replan_hotel_route(start_xy, goal_xy)
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            new_plan = replan_hospital_route(start_xy, goal_xy)
         else:
             new_plan = replan_library_route(start_xy, goal_xy)
         if not new_plan or not new_plan.get('success'):
@@ -1206,8 +1408,13 @@ class LibraryDemoApp(object):
             self.canvas.config(cursor="")
         self._compute_a_star_plan()
         self.reset_simulation()
+        orig_name = "Circulation Counter"
+        if self.active_scenario == "hotelroomservice":
+            orig_name = "Suite 204"
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            orig_name = "ICU Nurse Station"
         self.lbl_goal_status.configure(
-            text="Reset to original Circulation Counter scenario.",
+            text="Reset to original {} scenario.".format(orig_name),
             fg=THEME_ACCENT_BLUE
         )
         self._update_badges("READY", "#9e9e9e")
@@ -1226,7 +1433,7 @@ class LibraryDemoApp(object):
         humans = self.env.soadrl_sim.humans
         robot_pos = [robot.px, robot.py]
 
-        # Compute velocity command from LibraryNavigationController
+        # Compute velocity command from active controller
         action = self.ctrl.act(robot_pos, humans, action_dim=2)
         vx, vy = float(action[0]), float(action[1])
 
@@ -1240,7 +1447,29 @@ class LibraryDemoApp(object):
         # Context-aware navigation state for evaluator commentary
         tot_speed = math.hypot(vx, vy)
         has_detour = getattr(self.ctrl, 'detour_y', 0.0) != 0.0 or getattr(self.ctrl, 'detour_x', 0.0) != 0.0
-        if tot_speed < 0.04 and self.current_step > 5:
+        if self.active_scenario in ["medirunner", "hospital"]:
+            c_state = getattr(self.ctrl, 'state', 'NORMAL')
+            if c_state == getattr(self.ctrl, 'STATE_YIELDING', 'ALCOVE_YIELDING'):
+                self.nav_state_str = "ALCOVE YIELDING (Pulling into safe alcove)"
+            elif c_state == getattr(self.ctrl, 'STATE_WAITING', 'WAITING_IN_ALCOVE'):
+                self.nav_state_str = "WAITING IN ALCOVE (Letting Emergency Gurney Pass)"
+            elif c_state == getattr(self.ctrl, 'STATE_RESUMING', 'RESUMING_TRANSIT'):
+                self.nav_state_str = "RESUMING TRANSIT (Gurney Safely Cleared)"
+            elif tot_speed < 0.04 and self.current_step > 5:
+                self.nav_state_str = "PREDICTIVE YIELDING (Pedestrian Proximity)"
+            elif self.ctrl.current_wp_idx >= len(self.ctrl.waypoints) - 1:
+                default_dest = "ICU NURSE STATION"
+                dest_name = self.selected_goal_label if self.selected_goal_label else default_dest
+                self.nav_state_str = "DOCKING AT {}".format(dest_name.upper())
+            elif robot.px < -6.0:
+                self.nav_state_str = "TRANSIT: Central Pharmacy Wing"
+            elif -3.0 <= robot.px <= 1.0:
+                self.nav_state_str = "TRANSIT: Triage Choke-Point (South Lane y=-0.6m)"
+            elif robot.px > 6.0:
+                self.nav_state_str = "TRANSIT: ICU Wing Approach"
+            else:
+                self.nav_state_str = "TRANSIT: Clinical Hallway"
+        elif tot_speed < 0.04 and self.current_step > 5:
             self.nav_state_str = "PREDICTIVE YIELDING (Waiting for crossing pedestrian)"
         elif has_detour:
             self.nav_state_str = "DETOUR ACTIVE (Bypassing pedestrian obstacle)"
@@ -1360,6 +1589,9 @@ class LibraryDemoApp(object):
         """Draws the realistic architectural floor plan and all active dynamic elements."""
         if self.active_scenario == "hotelroomservice":
             self._render_hotel_frame()
+            return
+        elif self.active_scenario in ["medirunner", "hospital"]:
+            self._render_hospital_frame()
             return
 
         img = np.full((self.canvas_height, self.canvas_width, 3), FLOOR_BASE, dtype=np.uint8)
@@ -2270,6 +2502,383 @@ class LibraryDemoApp(object):
         cv2.line(img, (485, self.canvas_height - 25), (505, self.canvas_height - 25), (40, 210, 80), 2)
         cv2.putText(img, "A* Route", (512, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (220, 225, 230), 1)
 
+    def _render_hospital_frame(self):
+        """Draws the realistic clinical hospital floor plan and dynamic medical entities."""
+        img = np.full((self.canvas_height, self.canvas_width, 3), HOSPITAL_FLOOR_BASE, dtype=np.uint8)
+
+        # 1. Antiseptic porcelain tile floor grout lines
+        tile_sz = 34
+        for gx in range(0, self.canvas_width, tile_sz):
+            cv2.line(img, (gx, 0), (gx, self.canvas_height), HOSPITAL_FLOOR_SEAM, 1)
+        for gy in range(0, self.canvas_height, tile_sz):
+            cv2.line(img, (0, gy), (self.canvas_width, gy), HOSPITAL_FLOOR_SEAM, 1)
+
+        # 2. Central clinical transit hallway subtle guide zone (y in [-2.0, 2.0])
+        h_tl = self._w2px(-12.0, 2.0)
+        h_br = self._w2px(12.0, -2.0)
+        cv2.rectangle(img, (0, h_tl[1]), (self.canvas_width, h_br[1]), (242, 246, 249), -1)
+        # Corridor boundary dashed guidelines
+        for dx in range(10, self.canvas_width, 40):
+            cv2.line(img, (dx, h_tl[1]), (dx + 20, h_tl[1]), (205, 218, 228), 2)
+            cv2.line(img, (dx, h_br[1]), (dx + 20, h_br[1]), (205, 218, 228), 2)
+
+        # 3. Outer boundary walls
+        if self.cfg is not None:
+            outer_poly = np.array([self._w2px(pt[0], pt[1]) for pt in self.cfg.static_obstacles[0]], dtype=np.int32)
+            cv2.polylines(img, [outer_poly], isClosed=True, color=(20, 30, 42), thickness=6)
+
+        # 4. Static obstacles: Corridor Walls & Central Triage Desk
+        if self.cfg is not None:
+            for idx, poly in enumerate(self.cfg.static_obstacles[1:], start=1):
+                pts = np.array([self._w2px(pt[0], pt[1]) for pt in poly], dtype=np.int32)
+                x_min, x_max = np.min(pts[:, 0]), np.max(pts[:, 0])
+                y_min, y_max = np.min(pts[:, 1]), np.max(pts[:, 1])
+
+                if idx in [1, 2, 3, 4]:
+                    # Corridor partition walls (North 1, North 2, South 1, South 2)
+                    cv2.fillPoly(img, [pts + np.array([3, 3], dtype=np.int32)], (200, 210, 220))
+                    cv2.fillPoly(img, [pts], (42, 54, 68))
+                    cv2.polylines(img, [pts], isClosed=True, color=(22, 32, 44), thickness=2)
+                    cv2.line(img, (x_min + 4, y_min + 4), (x_max - 4, y_min + 4), (70, 85, 105), 1)
+
+                    # Wall segment placards
+                    c_x = int(np.mean(pts[:, 0]))
+                    c_y = int(np.mean(pts[:, 1]))
+                    if idx == 1:
+                        cv2.putText(img, "NORTH WALL 1", (c_x - 38, c_y + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (160, 175, 190), 1, cv2.LINE_AA)
+                    elif idx == 2:
+                        cv2.putText(img, "NORTH WALL 2", (c_x - 38, c_y + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (160, 175, 190), 1, cv2.LINE_AA)
+                    elif idx == 3:
+                        cv2.putText(img, "SOUTH WALL 1", (c_x - 38, c_y + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (160, 175, 190), 1, cv2.LINE_AA)
+                    elif idx == 4:
+                        cv2.putText(img, "SOUTH WALL 2", (c_x - 38, c_y + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (160, 175, 190), 1, cv2.LINE_AA)
+
+                elif idx == 5:
+                    # Central Triage Desk (Obstacle 5: [-0.75, 0.75] x [0.8, 1.6])
+                    cv2.fillPoly(img, [pts + np.array([4, 4], dtype=np.int32)], (190, 202, 212))
+                    cv2.fillPoly(img, [pts], (165, 180, 195))
+                    cv2.polylines(img, [pts], isClosed=True, color=(90, 108, 126), thickness=2)
+                    # Countertop bevel
+                    cv2.rectangle(img, (x_min + 4, y_min + 4), (x_max - 4, y_max - 4), (195, 210, 225), -1)
+                    cv2.rectangle(img, (x_min + 4, y_min + 4), (x_max - 4, y_max - 4), (140, 155, 172), 1)
+
+                    # Dual diagnostic telemetry monitors
+                    m1_cx = int(x_min + (x_max - x_min) * 0.30)
+                    m2_cx = int(x_min + (x_max - x_min) * 0.70)
+                    m_cy = int((y_min + y_max) / 2)
+                    for mc in [m1_cx, m2_cx]:
+                        cv2.rectangle(img, (mc - 10, m_cy - 7), (mc + 10, m_cy + 7), (25, 30, 35), -1)
+                        cv2.rectangle(img, (mc - 8, m_cy - 5), (mc + 8, m_cy + 5), (15, 25, 20), -1)
+                        # ECG green pulse on screen
+                        cv2.line(img, (mc - 7, m_cy), (mc - 3, m_cy), (40, 220, 80), 1)
+                        cv2.line(img, (mc - 3, m_cy), (mc - 1, m_cy - 4), (40, 220, 80), 1)
+                        cv2.line(img, (mc - 1, m_cy - 4), (mc + 1, m_cy + 4), (40, 220, 80), 1)
+                        cv2.line(img, (mc + 1, m_cy + 4), (mc + 3, m_cy), (40, 220, 80), 1)
+                        cv2.line(img, (mc + 3, m_cy), (mc + 7, m_cy), (40, 220, 80), 1)
+
+                    c_x = int(np.mean(pts[:, 0]))
+                    cv2.putText(img, "TRIAGE & DIAGNOSTICS", (c_x - 68, y_min - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (30, 45, 60), 1, cv2.LINE_AA)
+                    cv2.putText(img, "BOTTLENECK CHOKE-POINT", (c_x - 65, y_max + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (20, 100, 200), 1, cv2.LINE_AA)
+
+        # 5. Four Recessed Patient Room Alcoves & Yield Refuges
+        # North Alcove 1: [-4.0, 0.0] x [1.2, 3.8] (Primary Yield Refuge)
+        self._draw_hospital_room_alcove(img, -2.4, 2.7, "ROOM 101: POST-OP RECOVERY", is_yield_zone=True, is_north=True)
+        # North Alcove 2: [4.0, 11.5] x [1.2, 3.8]
+        self._draw_hospital_room_alcove(img, 6.0, 2.7, "ROOM 102: CARDIOLOGY WING", is_yield_zone=False, is_north=True)
+        # South Alcove 1: [-11.5, -4.0] x [-3.8, -1.2]
+        self._draw_hospital_room_alcove(img, -7.5, -2.7, "ROOM 103: PEDIATRICS WING", is_yield_zone=False, is_north=False)
+        # South Alcove 2: [0.0, 4.0] x [-3.8, -1.2] (Secondary Yield Refuge)
+        self._draw_hospital_room_alcove(img, 2.0, -2.7, "ROOM 104: TRAUMA CARE", is_yield_zone=True, is_north=False)
+
+        # 6. West Wing Central Pharmacy Station (x = -10.5, y = 0.0)
+        p_px, p_py = self._w2px(-10.5, 0.0)
+        cv2.rectangle(img, (p_px - 22, p_py - 30), (p_px + 22, p_py + 30), (220, 230, 238), -1)
+        cv2.rectangle(img, (p_px - 22, p_py - 30), (p_px + 22, p_py + 30), (40, 120, 180), 2)
+        # Medical Red Cross on Pharmacy Counter
+        cv2.circle(img, (p_px, p_py - 8), 12, (255, 255, 255), -1)
+        cv2.circle(img, (p_px, p_py - 8), 12, (30, 40, 220), 1)
+        cv2.rectangle(img, (p_px - 3, p_py - 16), (p_px + 3, p_py), (30, 40, 220), -1)
+        cv2.rectangle(img, (p_px - 8, p_py - 11), (p_px + 8, p_py - 5), (30, 40, 220), -1)
+        cv2.putText(img, "PHARMACY", (p_px - 25, p_py + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (20, 40, 70), 1, cv2.LINE_AA)
+        cv2.putText(img, "DISPATCH", (p_px - 23, p_py + 27), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (20, 40, 70), 1, cv2.LINE_AA)
+
+        # 7. East Wing Intensive Care Unit (ICU) Nurse Station (x = 10.5, y = 0.0)
+        icu_px, icu_py = self._w2px(10.5, 0.0)
+        cv2.rectangle(img, (icu_px - 24, icu_py - 32), (icu_px + 24, icu_py + 32), (218, 230, 240), -1)
+        cv2.rectangle(img, (icu_px - 24, icu_py - 32), (icu_px + 24, icu_py + 32), (25, 95, 175), 2)
+        cv2.circle(img, (icu_px, icu_py - 8), 12, (255, 255, 255), -1)
+        cv2.circle(img, (icu_px, icu_py - 8), 12, (20, 150, 40), 1)
+        cv2.rectangle(img, (icu_px - 3, icu_py - 16), (icu_px + 3, icu_py), (20, 150, 40), -1)
+        cv2.rectangle(img, (icu_px - 8, icu_py - 11), (icu_px + 8, icu_py - 5), (20, 150, 40), -1)
+        cv2.putText(img, "ICU NURSE", (icu_px - 25, icu_py + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (15, 35, 65), 1, cv2.LINE_AA)
+        cv2.putText(img, "STATION", (icu_px - 21, icu_py + 27), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (15, 35, 65), 1, cv2.LINE_AA)
+
+        # 8. Overhead Architectural Section Signage
+        sections = [
+            ("WEST WING: PHARMACY DISPATCH", (-10.5, 3.65)),
+            ("CENTRAL CORRIDOR: 4.0m CLINICAL HALLWAY", (-2.0, 3.65)),
+            ("EAST WING: INTENSIVE CARE UNIT", (7.0, 3.65)),
+        ]
+        for name, (wx, wy) in sections:
+            px, py = self._w2px(wx, wy)
+            cv2.putText(img, name, (px - 60, py), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (100, 115, 130), 1, cv2.LINE_AA)
+
+        # Bottleneck South Bypass lane indicator: y = -0.60m
+        bp_px, bp_py = self._w2px(0.0, -0.60)
+        cv2.circle(img, (bp_px, bp_py), 4, (40, 180, 80), -1)
+        cv2.putText(img, "Nav Lane: y = -0.60m (Clearance: 1.1m)", (bp_px - 95, bp_py - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.27, (30, 130, 60), 1, cv2.LINE_AA)
+
+        # 9. A* Path Planning Visualization Overlay
+        if self.view_mode in ["PLANNING", "NAVIGATING"] and self.planner_data is not None:
+            self._draw_a_star_overlay(img)
+
+        # 10. Start & Goal Visual Markers
+        if self.cfg is not None:
+            s_px, s_py = self._w2px(self.cfg.robot_start[0], self.cfg.robot_start[1])
+            cv2.circle(img, (s_px, s_py), 16, (60, 180, 75), 2, cv2.LINE_AA)
+            cv2.circle(img, (s_px, s_py), 8, (60, 180, 75), -1, cv2.LINE_AA)
+            cv2.putText(img, "START: Pharmacy", (s_px - 48, s_py - 22), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (30, 120, 40), 1, cv2.LINE_AA)
+
+            target_goal = self.selected_goal if self.selected_goal is not None else self.cfg.robot_goal
+            g_px, g_py = self._w2px(target_goal[0], target_goal[1])
+            cv2.circle(img, (g_px, g_py), 18, (0, 190, 250), 2, cv2.LINE_AA)
+            cv2.circle(img, (g_px, g_py), 10, (0, 190, 250), -1, cv2.LINE_AA)
+            g_lbl = "GOAL: " + (self.selected_goal_label if self.selected_goal_label else "ICU Nurse Station")
+            cv2.putText(img, g_lbl, (g_px - 65, g_py - 24), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 140, 200), 2, cv2.LINE_AA)
+
+        # 11. Visited Trajectory Trail
+        if len(self.trajectory) > 1:
+            for i in range(len(self.trajectory) - 1):
+                p1 = self._w2px(self.trajectory[i][0], self.trajectory[i][1])
+                p2 = self._w2px(self.trajectory[i + 1][0], self.trajectory[i + 1][1])
+                cv2.line(img, p1, p2, (230, 160, 40), 2, cv2.LINE_AA)
+
+        # 12. Dynamic Pedestrians with Hospital Clinical Roles
+        if self.env is not None and hasattr(self.env, "soadrl_sim"):
+            self._draw_hospital_pedestrians(img)
+
+        # 13. MediRunner Autonomous Mobile Robot Avatar
+        if self.env is not None and hasattr(self.env, "soadrl_sim"):
+            self._draw_hospital_robot(img)
+
+        # 14. Interactive Goal Selection Overlay
+        if self.is_selecting_goal:
+            cv2.rectangle(img, (20, 16), (620, 50), (25, 28, 36), -1)
+            cv2.rectangle(img, (20, 16), (620, 50), (0, 190, 255), 2)
+            cv2.putText(
+                img,
+                "[HOSPITAL MODE] CLICK REACHABLE CORRIDOR / ALCOVE FOR MEDICINE DELIVERY",
+                (30, 38),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.33,
+                (0, 230, 255),
+                1,
+                cv2.LINE_AA
+            )
+            if self.mouse_hover_coords is not None:
+                hx_px, hy_px = self._w2px(self.mouse_hover_coords[0], self.mouse_hover_coords[1])
+                if 0 <= hx_px < self.canvas_width and 0 <= hy_px < self.canvas_height:
+                    cv2.circle(img, (hx_px, hy_px), 8, (0, 220, 255), 1, cv2.LINE_AA)
+                    cv2.drawMarker(img, (hx_px, hy_px), (0, 220, 255), cv2.MARKER_CROSS, 14, 1)
+
+        # 15. Hospital HUD Legend
+        self._draw_hospital_hud_legend(img)
+
+        # Render on Canvas
+        self._last_bgr_img = img.copy()
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(rgb_img)
+        self.canvas_photo = ImageTk.PhotoImage(image=pil_img)
+        self.canvas.create_image(0, 0, image=self.canvas_photo, anchor="nw")
+
+    def _draw_hospital_room_alcove(self, img, cx, cy, label, is_yield_zone=False, is_north=True):
+        """Draws a recessed patient room alcove with bed, telemetry, and yield zone markings."""
+        p_cx, p_cy = self._w2px(cx, cy)
+        bw, bh = 48, 30
+        p_tl = (p_cx - bw // 2, p_cy - bh // 2)
+        p_br = (p_cx + bw // 2, p_cy + bh // 2)
+
+        # 1. Yield zone safety hatching
+        if is_yield_zone:
+            yz_pad = 12
+            yz_tl = (p_tl[0] - yz_pad, p_tl[1] - yz_pad)
+            yz_br = (p_br[0] + yz_pad, p_br[1] + yz_pad)
+            cv2.rectangle(img, yz_tl, yz_br, (230, 245, 235), -1)
+            cv2.rectangle(img, yz_tl, yz_br, (60, 180, 100), 1)
+            cv2.putText(img, "[+] ALCOVE YIELD REFUGE", (yz_tl[0] + 4, yz_tl[1] + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (20, 120, 50), 1, cv2.LINE_AA)
+
+        # 2. Hospital Bed
+        cv2.rectangle(img, (p_tl[0] + 3, p_tl[1] + 3), (p_br[0] + 3, p_br[1] + 3), (205, 215, 222), -1)
+        cv2.rectangle(img, p_tl, p_br, (135, 145, 155), -1)
+        cv2.rectangle(img, p_tl, p_br, (80, 90, 100), 1)
+
+        # Mattress & Linen
+        cv2.rectangle(img, (p_tl[0] + 4, p_tl[1] + 3), (p_br[0] - 4, p_br[1] - 3), (255, 255, 255), -1)
+        # Pillow
+        if is_north:
+            cv2.rectangle(img, (p_tl[0] + 6, p_tl[1] + 4), (p_tl[0] + 16, p_br[1] - 4), (220, 235, 245), -1)
+            cv2.rectangle(img, (p_tl[0] + 20, p_tl[1] + 3), (p_br[0] - 4, p_br[1] - 3), (210, 170, 70), -1)
+        else:
+            cv2.rectangle(img, (p_br[0] - 16, p_tl[1] + 4), (p_br[0] - 6, p_br[1] - 4), (220, 235, 245), -1)
+            cv2.rectangle(img, (p_tl[0] + 4, p_tl[1] + 3), (p_br[0] - 20, p_br[1] - 3), (210, 170, 70), -1)
+
+        # 3. Bedside vitals monitor
+        vm_x = p_br[0] + 6
+        vm_y = p_cy - 6
+        cv2.rectangle(img, (vm_x - 6, vm_y - 6), (vm_x + 6, vm_y + 6), (25, 30, 35), -1)
+        cv2.line(img, (vm_x - 4, vm_y), (vm_x + 4, vm_y), (40, 220, 80), 1)
+
+        # 4. Room Placard
+        lbl_y = p_tl[1] - 4 if is_north else p_br[1] + 12
+        cv2.putText(img, label, (p_cx - 45, lbl_y), cv2.FONT_HERSHEY_SIMPLEX, 0.27, (40, 60, 80), 1, cv2.LINE_AA)
+
+    def _draw_hospital_robot(self, img):
+        """Draws the MediRunner AMR with clean white livery, medical cross, and safety halo."""
+        if self.env is None or not hasattr(self.env, "soadrl_sim"):
+            return
+        robot = self.env.soadrl_sim.robot
+        rx, ry = self._w2px(robot.px, robot.py)
+        rr = max(10, int(robot.radius * self.scale_px))
+        theta = robot.theta
+
+        # Drive wheels
+        cos_t = math.cos(theta)
+        sin_t = math.sin(theta)
+        nx = -sin_t
+        ny = cos_t
+        w1_x = int(rx + nx * (rr + 2))
+        w1_y = int(ry - ny * (rr + 2))
+        w2_x = int(rx - nx * (rr + 2))
+        w2_y = int(ry + ny * (rr + 2))
+        cv2.circle(img, (w1_x, w1_y), 3, (25, 25, 25), -1)
+        cv2.circle(img, (w2_x, w2_y), 3, (25, 25, 25), -1)
+
+        # Dynamic Safety Halo depending on controller state
+        c_state = getattr(self.ctrl, 'state', 'NORMAL')
+        halo_color = (60, 220, 80) # Default cruising green
+        if c_state in ["ALCOVE_YIELDING", "WAITING_IN_ALCOVE"]:
+            halo_color = (0, 190, 255) # Warning Amber in alcove yield
+        elif getattr(self.ctrl, 'stopped_steps', 0) > 0:
+            halo_color = (30, 30, 240) # Emergency Stop Red
+        cv2.circle(img, (rx, ry), rr + 6, halo_color, 1, cv2.LINE_AA)
+
+        # Robot chassis: clinical pearl white
+        cv2.circle(img, (rx, ry), rr, (250, 252, 255), -1)
+        cv2.circle(img, (rx, ry), rr, (200, 150, 0), 2) # Cyan bumper
+
+        # Medical Red Cross on top deck
+        cr_w = max(2, rr // 4)
+        cr_len = max(5, int(rr * 0.60))
+        cv2.rectangle(img, (rx - cr_w, ry - cr_len), (rx + cr_w, ry + cr_len), (35, 35, 225), -1)
+        cv2.rectangle(img, (rx - cr_len, ry - cr_w), (rx + cr_len, ry + cr_w), (35, 35, 225), -1)
+
+        # Digital medicine vault temperature indicator (+4°C LED)
+        cv2.circle(img, (rx - 4, ry - rr + 4), 2, (40, 220, 60), -1)
+
+        # Top LiDAR turret
+        head_x = int(rx + cos_t * (rr - 2))
+        head_y = int(ry - sin_t * (rr - 2))
+        cv2.circle(img, (head_x, head_y), 3, (35, 45, 55), -1)
+
+        # Heading orientation vector
+        ray_x = int(rx + cos_t * (rr + 12))
+        ray_y = int(ry - sin_t * (rr + 12))
+        cv2.line(img, (rx, ry), (ray_x, ray_y), (255, 255, 255), 2, cv2.LINE_AA)
+
+        # State label
+        lbl_str = "AMR: MediRunner"
+        if c_state in ["ALCOVE_YIELDING", "WAITING_IN_ALCOVE"]:
+            lbl_str = "AMR: Yielding in Alcove"
+        cv2.putText(img, lbl_str, (rx - 44, ry - rr - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (20, 40, 60), 1, cv2.LINE_AA)
+
+    def _draw_hospital_pedestrians(self, img):
+        """Draws dynamic clinical agents: Emergency Gurney, Nurses, Walker Patients, Visitors."""
+        if self.env is None or not hasattr(self.env, "soadrl_sim"):
+            return
+        sim = self.env.soadrl_sim
+        for i, h in enumerate(sim.humans):
+            hx, hy = self._w2px(h.px, h.py)
+            hr = max(6, int(h.radius * self.scale_px))
+            speed = math.hypot(h.vx, h.vy)
+
+            role = 'visitor'
+            if self.cfg and hasattr(self.cfg, 'base_humans') and i < len(self.cfg.base_humans):
+                role = self.cfg.base_humans[i].get('role', 'visitor')
+
+            if role == 'emergency_gurney':
+                # Critical Hazard: High-speed Emergency Gurney (r=0.65m, v=1.65m/s)
+                # 1. Pulsating emergency red/amber hazard beacon halo
+                cv2.circle(img, (hx, hy), hr + 8, (0, 160, 255), 1, cv2.LINE_AA)
+                cv2.circle(img, (hx, hy), hr + 12, (20, 30, 240), 1, cv2.LINE_AA)
+
+                # 2. Gurney metallic stretcher frame
+                gw = max(24, int(hr * 1.8))
+                gh = max(14, int(hr * 1.1))
+                cv2.rectangle(img, (hx - gw // 2 + 2, hy - gh // 2 + 2), (hx + gw // 2 + 2, hy + gh // 2 + 2), (180, 190, 200), -1)
+                cv2.rectangle(img, (hx - gw // 2, hy - gh // 2), (hx + gw // 2, hy + gh // 2), (75, 80, 85), -1)
+                cv2.rectangle(img, (hx - gw // 2, hy - gh // 2), (hx + gw // 2, hy + gh // 2), (40, 45, 50), 2)
+
+                # 3. Patient lying on emergency mattress
+                cv2.rectangle(img, (hx - gw // 2 + 3, hy - gh // 2 + 3), (hx + gw // 2 - 3, hy + gh // 2 - 3), (215, 140, 50), -1)
+                cv2.rectangle(img, (hx - gw // 2 + 6, hy - gh // 2 + 3), (hx + gw // 2 - 10, hy + gh // 2 - 3), (250, 252, 255), -1)
+                cv2.circle(img, (hx + gw // 2 - 7, hy), 4, (220, 230, 240), -1)
+
+                # 4. Flashing beacon light on top
+                cv2.circle(img, (hx, hy), 4, (20, 30, 245), -1)
+                cv2.circle(img, (hx, hy), 2, (255, 255, 255), -1)
+
+                cv2.putText(img, "EMERGENCY GURNEY (1.65 m/s)", (hx - 68, hy - hr - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (20, 30, 240), 1, cv2.LINE_AA)
+                cv2.putText(img, "[RIGHT OF WAY]", (hx - 36, hy - hr - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (0, 140, 230), 1, cv2.LINE_AA)
+
+            elif role == 'nurse_fast':
+                # Purposeful Nurse (Fast counterflow 1.25 m/s)
+                cv2.circle(img, (hx, hy), hr, (175, 145, 0), -1)
+                cv2.circle(img, (hx, hy), hr, (120, 100, 0), 1)
+                cv2.circle(img, (hx, hy - 2), max(2, hr // 3), (255, 255, 255), -1)
+                cv2.ellipse(img, (hx, hy + 2), (hr - 2, hr // 2), 0, 0, 180, (240, 240, 240), 1)
+                cv2.putText(img, "Nurse (1.2m/s)", (hx - 32, hy - hr - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.29, (140, 110, 0), 1, cv2.LINE_AA)
+
+            elif role == 'patient_walker':
+                # Frail Patient with Mobility Walker (r=0.45m, v=0.28m/s)
+                cv2.circle(img, (hx, hy), hr, (220, 180, 130), -1)
+                cv2.circle(img, (hx, hy), hr, (150, 110, 70), 1)
+                wk_w, wk_h = 14, 12
+                wk_cx = hx - 12 if h.vx < 0 else hx + 12
+                cv2.rectangle(img, (wk_cx - wk_w // 2, hy - wk_h // 2), (wk_cx + wk_w // 2, hy + wk_h // 2), (160, 170, 180), 2)
+                cv2.circle(img, (wk_cx - wk_w // 2, hy - wk_h // 2), 2, (30, 30, 30), -1)
+                cv2.circle(img, (wk_cx + wk_w // 2, hy - wk_h // 2), 2, (30, 30, 30), -1)
+                cv2.circle(img, (wk_cx - wk_w // 2, hy + wk_h // 2), 2, (30, 30, 30), -1)
+                cv2.circle(img, (wk_cx + wk_w // 2, hy + wk_h // 2), 2, (30, 30, 30), -1)
+                cv2.putText(img, "Patient + Walker", (hx - 38, hy - hr - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (140, 100, 50), 1, cv2.LINE_AA)
+
+            else:
+                # Visitor
+                cv2.circle(img, (hx, hy), hr, (160, 120, 140), -1)
+                cv2.circle(img, (hx, hy), hr, (100, 70, 90), 1)
+                cv2.putText(img, "Visitor", (hx - 16, hy - hr - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (80, 50, 70), 1, cv2.LINE_AA)
+
+            # Velocity vector arrow
+            if speed > 0.05:
+                v_end_x = int(hx + h.vx * self.scale_px * 0.4)
+                v_end_y = int(hy - h.vy * self.scale_px * 0.4)
+                cv2.arrowedLine(img, (hx, hy), (v_end_x, v_end_y), (255, 255, 255), 1, tipLength=0.3)
+
+    def _draw_hospital_hud_legend(self, img):
+        """Draws the bottom floating HUD legend for the Hospital scenario."""
+        cv2.rectangle(img, (20, self.canvas_height - 38), (620, self.canvas_height - 12), (25, 28, 34), -1)
+        cv2.rectangle(img, (20, self.canvas_height - 38), (620, self.canvas_height - 12), (50, 55, 65), 1)
+        cv2.circle(img, (32, self.canvas_height - 25), 6, (250, 252, 255), -1)
+        cv2.circle(img, (32, self.canvas_height - 25), 6, (200, 150, 0), 1)
+        cv2.putText(img, "MediRunner (AMR)", (44, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.30, (220, 225, 230), 1)
+        cv2.rectangle(img, (155, self.canvas_height - 30), (170, self.canvas_height - 20), (20, 30, 240), -1)
+        cv2.putText(img, "Emergency Gurney (1.65m/s)", (176, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.30, (220, 225, 230), 1)
+        cv2.circle(img, (340, self.canvas_height - 25), 6, (175, 145, 0), -1)
+        cv2.putText(img, "Nurse", (350, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.30, (220, 225, 230), 1)
+        cv2.circle(img, (400, self.canvas_height - 25), 6, (220, 180, 130), -1)
+        cv2.putText(img, "Walker Patient", (410, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.30, (220, 225, 230), 1)
+        cv2.rectangle(img, (505, self.canvas_height - 29), (517, self.canvas_height - 21), (60, 180, 100), 1)
+        cv2.putText(img, "Alcove Refuge", (523, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.30, (220, 225, 230), 1)
+
     def on_run_benchmark_pressed(self):
         """Starts the 20-seed benchmark runner thread."""
         if self.is_benchmark_running:
@@ -2287,6 +2896,7 @@ class LibraryDemoApp(object):
         """Worker thread running seeds 42-61 across EASY, MEDIUM, and HARD."""
         tiers = ["EASY", "MEDIUM", "HARD"]
         results = {}
+        active_scen = "hotelroomservice" if self.active_scenario == "hotelroomservice" else ("medirunner" if self.active_scenario in ["medirunner", "hospital"] else "library")
 
         for diff in tiers:
             successes = 0
@@ -2296,17 +2906,28 @@ class LibraryDemoApp(object):
 
             for seed in range(42, 62):
                 np.random.seed(seed)
-                env = CustomNavRepEncodedEnv(scenario="library", difficulty=diff, gpu=False, silent=True)
-                cfg = get_scenario_config("library")
-                env.reset("library", diff)
-                sync_and_rasterize_sim(env.raw_env, cfg)
+                env = CustomNavRepEncodedEnv(scenario=active_scen, difficulty=diff, gpu=False, silent=True)
+                cfg = get_scenario_config(active_scen)
+                env.reset(active_scen, diff)
+                if active_scen == "medirunner":
+                    sync_and_rasterize_hospital_sim(env, cfg)
+                    ctrl = HospitalNavigationController(
+                        static_obstacles=cfg.static_obstacles,
+                        world_bounds=cfg.world_bounds,
+                        waypoints=self.active_a_star_waypoints
+                    )
+                elif active_scen == "hotelroomservice":
+                    ctrl = HotelNavigationController(waypoints=self.active_a_star_waypoints)
+                else:
+                    sync_and_rasterize_sim(env.raw_env, cfg)
+                    ctrl = LibraryNavigationController(waypoints=self.active_a_star_waypoints)
 
-                ctrl = LibraryNavigationController(waypoints=self.active_a_star_waypoints)
                 done = False
                 step = 0
                 event = None
+                diff_limit = cfg.get_difficulty_config(diff).get('time_limit', 380)
 
-                while not done and step < 380:
+                while not done and step < diff_limit:
                     pos = [env.soadrl_sim.robot.px, env.soadrl_sim.robot.py]
                     action = ctrl.act(pos, env.soadrl_sim.humans, action_dim=2)
                     ob, rew, done, info = env.step(action)
@@ -2328,7 +2949,7 @@ class LibraryDemoApp(object):
 
                 self.benchmark_queue.put({
                     'type': 'progress',
-                    'text': "Evaluating {} (Seed {}/61)...".format(diff, seed)
+                    'text': "Evaluating {} [{}] (Seed {}/61)...".format(active_scen, diff, seed)
                 })
 
             avg_t = np.mean(times) if times else 0.0
@@ -2377,13 +2998,17 @@ class LibraryDemoApp(object):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="SVNIT CS359 Dual Scenario Autonomous Robot Navigation GUI")
-    parser.add_argument("--scenario", type=str, default="library", choices=["library", "hotelroomservice"],
-                        help="Scenario to launch: 'library' or 'hotelroomservice'")
+    parser = argparse.ArgumentParser(description="SVNIT CS359 Multi-Scenario Autonomous Robot Navigation GUI")
+    parser.add_argument("--scenario", type=str, default="library", choices=["library", "hotelroomservice", "medirunner", "hospital"],
+                        help="Scenario to launch: 'library', 'hotelroomservice', or 'medirunner' / 'hospital'")
     args, _ = parser.parse_known_args()
 
+    scen = args.scenario
+    if scen == "hospital":
+        scen = "medirunner"
+
     root = tk.Tk()
-    app = LibraryDemoApp(root, default_scenario=args.scenario)
+    app = LibraryDemoApp(root, default_scenario=scen)
     root.mainloop()
 
 

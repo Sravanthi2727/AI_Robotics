@@ -24,9 +24,10 @@ WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 cd "$WORKSPACE_ROOT"
 
 echo "=========================================================="
-echo "  Launching Library Book Collection Robot GUI Demo"
+echo "  Launching Autonomous Robot Navigation GUI Demo (SVNIT)"
 echo "  Display : $DISPLAY"
 echo "  Root    : $WORKSPACE_ROOT"
+echo "  Scenarios: [1] Library  [2] Hotel Room Service  [3] MediRunner Hospital"
 echo "=========================================================="
 
 python "$SCRIPT_DIR/library_gui.py" "$@"
