@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import argparse
 import os
 import numpy as np
 import cv2
@@ -12,7 +13,30 @@ from scripts_custom.record_scenario import render_scene_frame, verify_video_fram
 from crowd_sim.envs.utils.info import ReachGoal, Collision, CollisionOtherAgent, Timeout
 
 
-def record_hotel_demo():
+def play_existing_hotel_demo():
+    output_path = "submission/task3_custom/videos/hotel_room_service_medium.mp4"
+    if not os.path.exists(output_path):
+        print("[HOTEL DEMO] Video file not found: {}".format(output_path))
+        return
+    cap = cv2.VideoCapture(output_path)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 12.0
+    delay_ms = max(1, int(1000.0 / fps))
+    win_name = "HOTEL ROOM SERVICE ROBOT - LIVE VNC DEMO"
+    cv2.namedWindow(win_name, cv2.WINDOW_AUTOSIZE)
+    print("[HOTEL DEMO] Playing video on VNC display...")
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        cv2.imshow(win_name, frame)
+        if cv2.waitKey(delay_ms) & 0xFF == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+    print("[HOTEL DEMO] Playback finished.")
+
+
+def record_hotel_demo(show_gui=False):
     np.random.seed(42)
 
     output_path = "submission/task3_custom/videos/hotel_room_service_medium.mp4"
@@ -96,6 +120,11 @@ def record_hotel_demo():
             writer.append_data(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             total_frames += 1
 
+            if show_gui:
+                cv2.imshow("HOTEL ROOM SERVICE ROBOT - LIVE VNC DEMO", frame)
+                if cv2.waitKey(max(1, int(1000.0 / fps))) & 0xFF == ord('q'):
+                    break
+
         if not done:
             status = "TIMEOUT"
 
@@ -117,6 +146,13 @@ def record_hotel_demo():
         for _ in range(int(fps * 2)):
             writer.append_data(final_rgb)
             total_frames += 1
+            if show_gui:
+                cv2.imshow("HOTEL ROOM SERVICE ROBOT - LIVE VNC DEMO", final_frame)
+                if cv2.waitKey(max(1, int(1000.0 / fps))) & 0xFF == ord('q'):
+                    break
+
+        if show_gui:
+            cv2.destroyAllWindows()
 
         print("[HOTEL DEMO] Result: {}".format(status))
         print("[HOTEL DEMO] Steps: {}".format(step))
@@ -139,4 +175,12 @@ def record_hotel_demo():
 
 
 if __name__ == "__main__":
-    record_hotel_demo()
+    parser = argparse.ArgumentParser(description="Record or display Hotel Room Service demo.")
+    parser.add_argument("--gui", action="store_true", help="Display live simulation window on VNC")
+    parser.add_argument("--play", action="store_true", help="Play existing recorded MP4 video on VNC")
+    args = parser.parse_args()
+
+    if args.play:
+        play_existing_hotel_demo()
+    else:
+        record_hotel_demo(show_gui=args.gui)

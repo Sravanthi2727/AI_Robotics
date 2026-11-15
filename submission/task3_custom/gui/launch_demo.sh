@@ -29,5 +29,5 @@ echo "  Display : $DISPLAY"
 echo "  Root    : $WORKSPACE_ROOT"
 echo "=========================================================="
 
-python "$SCRIPT_DIR/library_gui.py"
+python "$SCRIPT_DIR/library_gui.py" "$@"
 

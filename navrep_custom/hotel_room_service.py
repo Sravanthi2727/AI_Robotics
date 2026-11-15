@@ -4,9 +4,9 @@ import numpy as np
 
 class HotelNavigationController(object):
 
-    def __init__(self, max_speed=0.65):
+    def __init__(self, max_speed=0.65, waypoints=None):
         self.max_speed = max_speed
-        self.waypoints = [
+        self.default_waypoints = [
             [-7.0, 0.0],
             [-3.0, 0.0],
             [1.0, 0.0],
@@ -14,11 +14,18 @@ class HotelNavigationController(object):
             [8.0, 0.0],
             [10.0, 0.0]
         ]
+        self.waypoints = [list(wp) for wp in (waypoints if waypoints is not None else self.default_waypoints)]
         self.current_wp_idx = 0
         self.stopped_steps = 0
         self.detour_y = 0.0
 
     def reset(self):
+        self.current_wp_idx = 0
+        self.stopped_steps = 0
+        self.detour_y = 0.0
+
+    def set_waypoints(self, waypoints):
+        self.waypoints = [list(wp) for wp in waypoints]
         self.current_wp_idx = 0
         self.stopped_steps = 0
         self.detour_y = 0.0

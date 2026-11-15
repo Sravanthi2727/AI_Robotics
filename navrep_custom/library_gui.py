@@ -81,6 +81,7 @@ from navrep_custom.library_book_collection import (
     sync_and_rasterize_sim,
     LibraryNavigationController,
 )
+from navrep_custom.hotel_room_service import HotelNavigationController
 from navrep_custom.library_planner import (
     OccupancyGrid,
     AStarPlanner,
@@ -88,6 +89,10 @@ from navrep_custom.library_planner import (
     replan_library_route,
     validate_library_goal,
     LIBRARY_PRESET_DESTINATIONS,
+    get_hotel_a_star_plan,
+    replan_hotel_route,
+    validate_hotel_goal,
+    HOTEL_PRESET_DESTINATIONS,
 )
 from crowd_sim.envs.utils.info import ReachGoal, Collision, CollisionOtherAgent, Timeout
 
@@ -141,11 +146,53 @@ ROLE_LIBRARIAN = (38, 117, 230)   # Librarian (Amber)
 ROLE_RESEARCHER = (229, 136, 33)  # Researcher (Blue)
 ROLE_STAFF = (67, 160, 71)        # Staff Member (Green)
 
+# Hotel Scenario Luxury Color Palette & Metadata
+HOTEL_SUITE_METADATA = {
+    4: ("Suite 201", "Deluxe King", True),
+    5: ("Suite 202", "Executive Suite", True),
+    6: ("Suite 203", "Presidential Suite", True),
+    7: ("Suite 101", "Deluxe Twin", False),
+    8: ("Suite 102", "Superior King", False),
+    9: ("Suite 103", "Garden Villa Suite", False),
+}
+HOTEL_FLOOR_GROUT = (215, 220, 225)
+HOTEL_CARPET_BASE = (38, 28, 128)
+HOTEL_BRASS_TRIM = (45, 175, 215)
+HOTEL_CARPET_PATTERN = (55, 45, 160)
+HOTEL_WALL_WOOD = (25, 45, 75)
+HOTEL_WALL_BORDER = (15, 28, 48)
+HOTEL_DOOR_MAHOGANY = (18, 30, 60)
+HOTEL_DOOR_BRASS = (50, 190, 230)
+HOTEL_PLAQUE_BG = (15, 18, 24)
+HOTEL_PLAQUE_GOLD = (50, 200, 240)
+HOTEL_RECEPTION_TOP = (45, 75, 115)
+HOTEL_RECEPTION_BELL = (50, 205, 245)
+HOTEL_SOFA_SAPPHIRE = (115, 65, 30)
+HOTEL_SOFA_BORDER = (80, 42, 18)
+HOTEL_PLANT_POT = (35, 70, 110)
+HOTEL_PLANT_GREEN = (45, 140, 60)
+HOTEL_COFFEE_TABLE = (25, 42, 70)
+HOTEL_TABLE_GLASS = (160, 200, 215)
+HOTEL_MONITOR_BEZEL = (30, 30, 30)
+HOTEL_MONITOR_SCREEN = (180, 170, 80)
+HOTEL_TOWEL_WHITE = (245, 245, 250)
+HOTEL_TOWEL_TEAL = (180, 160, 40)
+HOTEL_HAMPER_COL = (45, 80, 120)
+ROLE_GUEST = (220, 140, 45)
+ROLE_HOUSEKEEPING = (45, 150, 80)
+ROLE_LINEN_CART = (90, 100, 110)
+ROLE_SUITCASE = (40, 50, 130)
+HOTEL_ROBOT_SILVER = (205, 210, 215)
+HOTEL_ROBOT_CLOCHE = (60, 210, 245)
+HOTEL_ROBOT_HANDLE = (20, 140, 190)
+HOTEL_ROBOT_AMBER = (0, 190, 255)
+
 
 class LibraryDemoApp(object):
     """Main Tkinter Demonstration Application for Task 3."""
 
-    def __init__(self, root):
+    def __init__(self, root, default_scenario="library"):
+        self.active_scenario = default_scenario
         self.root = root
         self.root.title("LIBRARY BOOK COLLECTION ROBOT — SVNIT CS359: AI for Robotics")
         self.root.geometry("1260x780")
@@ -197,16 +244,30 @@ class LibraryDemoApp(object):
         # Canvas Dimensions & Metric Transformation
         self.canvas_width = 860
         self.canvas_height = 640
-        self.world_min_x = -10.5
-        self.world_max_x = 7.5
-        self.world_min_y = -5.5
-        self.world_max_y = 5.5
-        self.scale_px = min(
-            (self.canvas_width - 40) / (self.world_max_x - self.world_min_x),
-            (self.canvas_height - 40) / (self.world_max_y - self.world_min_y)
-        )
-        self.orig_x = int(20 + (-self.world_min_x) * self.scale_px)
-        self.orig_y = int(self.canvas_height / 2.0)
+        if self.active_scenario == "hotelroomservice":
+            self.world_min_x = -12.5
+            self.world_max_x = 12.5
+            self.world_min_y = -8.5
+            self.world_max_y = 8.5
+            self.scale_px = min(
+                (self.canvas_width - 40) / (self.world_max_x - self.world_min_x),
+                (self.canvas_height - 40) / (self.world_max_y - self.world_min_y)
+            )
+            self.orig_x = int(20 + (-self.world_min_x) * self.scale_px)
+            self.orig_y = int(self.canvas_height / 2.0)
+            self.original_goal = [10.0, 0.0]
+        else:
+            self.world_min_x = -10.5
+            self.world_max_x = 7.5
+            self.world_min_y = -5.5
+            self.world_max_y = 5.5
+            self.scale_px = min(
+                (self.canvas_width - 40) / (self.world_max_x - self.world_min_x),
+                (self.canvas_height - 40) / (self.world_max_y - self.world_min_y)
+            )
+            self.orig_x = int(20 + (-self.world_min_x) * self.scale_px)
+            self.orig_y = int(self.canvas_height / 2.0)
+            self.original_goal = [5.5, -3.5]
 
         # Precompute A* plan
         self._compute_a_star_plan()
@@ -227,16 +288,24 @@ class LibraryDemoApp(object):
     # A* PLAN INITIALIZATION
     # --------------------------------------------------------------------------
     def _compute_a_star_plan(self):
-        """Computes or retrieves cached A* plan from library static obstacles."""
+        """Computes or retrieves cached A* plan from static obstacles."""
         try:
-            self.planner_data = get_library_a_star_plan()
-            self.active_a_star_waypoints = [list(wp) for wp in self.planner_data['waypoints']]
-            self.ctrl = LibraryNavigationController(waypoints=self.active_a_star_waypoints)
+            if self.active_scenario == "hotelroomservice":
+                self.planner_data = get_hotel_a_star_plan()
+                self.active_a_star_waypoints = [list(wp) for wp in self.planner_data['waypoints']]
+                self.ctrl = HotelNavigationController(waypoints=self.active_a_star_waypoints)
+            else:
+                self.planner_data = get_library_a_star_plan()
+                self.active_a_star_waypoints = [list(wp) for wp in self.planner_data['waypoints']]
+                self.ctrl = LibraryNavigationController(waypoints=self.active_a_star_waypoints)
         except Exception as e:
             print("[WARN] A* plan computation exception:", e)
             self.planner_data = None
             self.active_a_star_waypoints = None
-            self.ctrl = LibraryNavigationController()
+            if self.active_scenario == "hotelroomservice":
+                self.ctrl = HotelNavigationController()
+            else:
+                self.ctrl = LibraryNavigationController()
 
     # --------------------------------------------------------------------------
     # UI SETUP & STYLING
@@ -346,6 +415,40 @@ class LibraryDemoApp(object):
         right_panel = tk.Frame(body, bg=THEME_PANEL_BG, width=370, bd=1, relief="ridge")
         right_panel.pack(side="right", fill="y", padx=(2, 0))
         right_panel.pack_propagate(False)
+
+        # 0. Active Scenario Selector
+        scen_card = tk.LabelFrame(
+            right_panel,
+            text=" Active Robot Scenario ",
+            font=("Helvetica", 9, "bold"),
+            fg=THEME_ACCENT_BLUE,
+            bg=THEME_CARD_BG,
+            bd=1,
+            relief="groove"
+        )
+        scen_card.pack(fill="x", padx=8, pady=(4, 2))
+
+        self.btn_scen_lib = tk.Button(
+            scen_card,
+            text="[1] Institutional Library Book Collection",
+            font=("Helvetica", 8, "bold"),
+            bg="#0277bd" if self.active_scenario == "library" else "#263238",
+            fg="white",
+            relief="sunken" if self.active_scenario == "library" else "raised",
+            command=lambda: self.switch_scenario("library")
+        )
+        self.btn_scen_lib.pack(fill="x", padx=4, pady=2)
+
+        self.btn_scen_hotel = tk.Button(
+            scen_card,
+            text="[2] Grand Hotel Room Service Delivery",
+            font=("Helvetica", 8, "bold"),
+            bg="#0277bd" if self.active_scenario == "hotelroomservice" else "#263238",
+            fg="white",
+            relief="sunken" if self.active_scenario == "hotelroomservice" else "raised",
+            command=lambda: self.switch_scenario("hotelroomservice")
+        )
+        self.btn_scen_hotel.pack(fill="x", padx=4, pady=2)
 
         # 1. PRIMARY: Full Demonstration Showcase
         demo_card = tk.LabelFrame(
@@ -496,7 +599,8 @@ class LibraryDemoApp(object):
         lbl_preset = tk.Label(row_g2, text="Preset:", font=("Helvetica", 8, "bold"), fg=THEME_FG, bg=THEME_CARD_BG)
         lbl_preset.pack(side="left", padx=(2, 2))
 
-        preset_options = [name for name, _ in LIBRARY_PRESET_DESTINATIONS]
+        active_presets = HOTEL_PRESET_DESTINATIONS if self.active_scenario == "hotelroomservice" else LIBRARY_PRESET_DESTINATIONS
+        preset_options = [name for name, _ in active_presets]
         self.preset_var = tk.StringVar(value=preset_options[0])
         self.opt_preset = tk.OptionMenu(
             row_g2,
@@ -664,6 +768,71 @@ class LibraryDemoApp(object):
     # --------------------------------------------------------------------------
     # SIMULATION INITIALIZATION & MODES
     # --------------------------------------------------------------------------
+    def switch_scenario(self, scenario_name):
+        """Switches between Library Book Collection and Hotel Room Service scenarios."""
+        if scenario_name == self.active_scenario:
+            return
+
+        self.active_scenario = scenario_name
+        if hasattr(self, 'btn_scen_lib'):
+            self.btn_scen_lib.configure(
+                bg="#0277bd" if self.active_scenario == "library" else "#263238",
+                relief="sunken" if self.active_scenario == "library" else "raised"
+            )
+        if hasattr(self, 'btn_scen_hotel'):
+            self.btn_scen_hotel.configure(
+                bg="#0277bd" if self.active_scenario == "hotelroomservice" else "#263238",
+                relief="sunken" if self.active_scenario == "hotelroomservice" else "raised"
+            )
+
+        if self.active_scenario == "hotelroomservice":
+            self.world_min_x = -12.5
+            self.world_max_x = 12.5
+            self.world_min_y = -8.5
+            self.world_max_y = 8.5
+            self.scale_px = min(
+                (self.canvas_width - 40) / (self.world_max_x - self.world_min_x),
+                (self.canvas_height - 40) / (self.world_max_y - self.world_min_y)
+            )
+            self.orig_x = int(20 + (-self.world_min_x) * self.scale_px)
+            self.orig_y = int(self.canvas_height / 2.0)
+            self.original_goal = [10.0, 0.0]
+            self.selected_goal = None
+            self.selected_goal_label = None
+            self.lbl_title.configure(text="GRAND HOTEL ROOM SERVICE ROBOT")
+            self.lbl_subtitle.configure(text="Task 3: Autonomous Room Service Delivery | Luxury Hotel Guest Corridors")
+            self.lbl_canvas_title.configure(text="GRAND HOTEL FLOOR PLAN (860x640) -- GUEST CORRIDORS & SUITES")
+            active_presets = HOTEL_PRESET_DESTINATIONS
+        else:
+            self.world_min_x = -10.5
+            self.world_max_x = 7.5
+            self.world_min_y = -5.5
+            self.world_max_y = 5.5
+            self.scale_px = min(
+                (self.canvas_width - 40) / (self.world_max_x - self.world_min_x),
+                (self.canvas_height - 40) / (self.world_max_y - self.world_min_y)
+            )
+            self.orig_x = int(20 + (-self.world_min_x) * self.scale_px)
+            self.orig_y = int(self.canvas_height / 2.0)
+            self.original_goal = [5.5, -3.5]
+            self.selected_goal = None
+            self.selected_goal_label = None
+            self.lbl_title.configure(text="LIBRARY BOOK COLLECTION ROBOT")
+            self.lbl_subtitle.configure(text="Task 3: Autonomous Mobile Navigation in Institutional Library | Author: Shriya (SVNIT Surat)")
+            self.lbl_canvas_title.configure(text="INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL")
+            active_presets = LIBRARY_PRESET_DESTINATIONS
+
+        self._rebuild_preset_menu(active_presets)
+        self.on_reset_pressed()
+
+    def _rebuild_preset_menu(self, preset_list):
+        """Dynamically updates OptionMenu items for active scenario."""
+        menu = self.opt_preset["menu"]
+        menu.delete(0, "end")
+        for name, _ in preset_list:
+            menu.add_command(label=name, command=lambda val=name: self.preset_var.set(val) or self.on_preset_destination_selected(val))
+        self.preset_var.set(preset_list[0][0])
+
     def reset_simulation(self):
         """Initializes or resets the simulation environment."""
         self.is_running = False
@@ -684,26 +853,41 @@ class LibraryDemoApp(object):
                 pass
 
         np.random.seed(self.current_seed)
-        self.cfg = get_scenario_config("library")
-        self.env = CustomNavRepEncodedEnv(
-            scenario="library",
-            difficulty=self.current_difficulty,
-            gpu=False,
-            silent=True
-        )
-        self.env.reset("library", self.current_difficulty)
-        sync_and_rasterize_sim(self.env.raw_env, self.cfg)
-
-        if self.selected_goal is not None:
-            self.env.soadrl_sim.robot.gx = self.selected_goal[0]
-            self.env.soadrl_sim.robot.gy = self.selected_goal[1]
-
-        # Initialize controller with calculated A* waypoints
-        if self.active_a_star_waypoints is not None:
-            self.ctrl = LibraryNavigationController(waypoints=self.active_a_star_waypoints)
+        if self.active_scenario == "hotelroomservice":
+            self.cfg = get_scenario_config("hotelroomservice")
+            self.env = CustomNavRepEncodedEnv(
+                scenario="hotelroomservice",
+                difficulty=self.current_difficulty,
+                gpu=False,
+                silent=True
+            )
+            self.env.reset("hotelroomservice", self.current_difficulty)
+            if self.selected_goal is not None:
+                self.env.soadrl_sim.robot.gx = self.selected_goal[0]
+                self.env.soadrl_sim.robot.gy = self.selected_goal[1]
+            if self.active_a_star_waypoints is not None:
+                self.ctrl = HotelNavigationController(waypoints=self.active_a_star_waypoints)
+            else:
+                self.ctrl = HotelNavigationController()
+            self.ctrl.reset()
         else:
-            self.ctrl = LibraryNavigationController()
-        self.ctrl.reset()
+            self.cfg = get_scenario_config("library")
+            self.env = CustomNavRepEncodedEnv(
+                scenario="library",
+                difficulty=self.current_difficulty,
+                gpu=False,
+                silent=True
+            )
+            self.env.reset("library", self.current_difficulty)
+            sync_and_rasterize_sim(self.env.raw_env, self.cfg)
+            if self.selected_goal is not None:
+                self.env.soadrl_sim.robot.gx = self.selected_goal[0]
+                self.env.soadrl_sim.robot.gy = self.selected_goal[1]
+            if self.active_a_star_waypoints is not None:
+                self.ctrl = LibraryNavigationController(waypoints=self.active_a_star_waypoints)
+            else:
+                self.ctrl = LibraryNavigationController()
+            self.ctrl.reset()
 
         self.current_step = 0
         self.trajectory = [list(self.cfg.robot_start[:2])]
@@ -715,11 +899,15 @@ class LibraryDemoApp(object):
         self._render_current_frame()
 
     def on_show_library_pressed(self):
-        """Resets view mode to clean library environment."""
+        """Resets view mode to clean environment view."""
         self.view_mode = "LIBRARY"
         self.is_full_demo_active = False
-        self.lbl_header_mode.configure(text="MODE: LIBRARY VIEW", bg="#80deea")
-        self.lbl_canvas_title.configure(text="INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL")
+        lbl = "MODE: HOTEL VIEW" if self.active_scenario == "hotelroomservice" else "MODE: LIBRARY VIEW"
+        self.lbl_header_mode.configure(text=lbl, bg="#80deea")
+        if self.active_scenario == "hotelroomservice":
+            self.lbl_canvas_title.configure(text="GRAND HOTEL FLOOR PLAN (860x640) -- GUEST CORRIDORS & SUITES")
+        else:
+            self.lbl_canvas_title.configure(text="INSTITUTIONAL LIBRARY FLOOR PLAN (860x640) -- WEST/EAST WINGS & READING HALL")
         self._render_current_frame()
 
     def on_run_path_planning_pressed(self):
@@ -869,7 +1057,10 @@ class LibraryDemoApp(object):
 
         wx, wy = self._px2w(event.x, event.y)
         wx, wy = round(wx, 2), round(wy, 2)
-        valid, reason = validate_library_goal((wx, wy))
+        if self.active_scenario == "hotelroomservice":
+            valid, reason = validate_hotel_goal((wx, wy))
+        else:
+            valid, reason = validate_library_goal((wx, wy))
         if not valid:
             self.lbl_goal_status.configure(
                 text="[!] Invalid Goal: {}".format(reason),
@@ -888,14 +1079,18 @@ class LibraryDemoApp(object):
     def on_preset_destination_selected(self, selection):
         """Handles selection of a destination preset from dropdown."""
         coords = None
-        for name, pt in LIBRARY_PRESET_DESTINATIONS:
+        active_presets = HOTEL_PRESET_DESTINATIONS if self.active_scenario == "hotelroomservice" else LIBRARY_PRESET_DESTINATIONS
+        for name, pt in active_presets:
             if name == selection:
                 coords = pt
                 break
         if coords is None:
             return
 
-        valid, reason = validate_library_goal(coords)
+        if self.active_scenario == "hotelroomservice":
+            valid, reason = validate_hotel_goal(coords)
+        else:
+            valid, reason = validate_library_goal(coords)
         if not valid:
             self.lbl_goal_status.configure(
                 text="[!] Preset Invalid: {}".format(reason),
@@ -953,7 +1148,10 @@ class LibraryDemoApp(object):
         self.root.update_idletasks()
 
         # Calculate new A* plan from current robot position to goal
-        new_plan = replan_library_route(start_xy, goal_xy)
+        if self.active_scenario == "hotelroomservice":
+            new_plan = replan_hotel_route(start_xy, goal_xy)
+        else:
+            new_plan = replan_library_route(start_xy, goal_xy)
         if not new_plan or not new_plan.get('success'):
             self.lbl_goal_status.configure(
                 text="[!] Replanning Failed: No collision-free route to destination",
@@ -1041,13 +1239,17 @@ class LibraryDemoApp(object):
 
         # Context-aware navigation state for evaluator commentary
         tot_speed = math.hypot(vx, vy)
+        has_detour = getattr(self.ctrl, 'detour_y', 0.0) != 0.0 or getattr(self.ctrl, 'detour_x', 0.0) != 0.0
         if tot_speed < 0.04 and self.current_step > 5:
             self.nav_state_str = "PREDICTIVE YIELDING (Waiting for crossing pedestrian)"
-        elif self.ctrl.detour_x != 0.0 or self.ctrl.detour_y != 0.0:
-            self.nav_state_str = "DETOUR ACTIVE (Bypassing static patron cluster)"
+        elif has_detour:
+            self.nav_state_str = "DETOUR ACTIVE (Bypassing pedestrian obstacle)"
         elif self.ctrl.current_wp_idx >= len(self.ctrl.waypoints) - 1:
-            dest_name = self.selected_goal_label if self.selected_goal_label else "CIRCULATION COUNTER"
+            default_dest = "SUITE 204" if self.active_scenario == "hotelroomservice" else "CIRCULATION COUNTER"
+            dest_name = self.selected_goal_label if self.selected_goal_label else default_dest
             self.nav_state_str = "DOCKING AT {}".format(dest_name.upper())
+        elif self.active_scenario == "hotelroomservice":
+            self.nav_state_str = "TRANSIT: Guest Room Corridor"
         elif robot.px < -3.2:
             self.nav_state_str = "TRANSIT: Stack Aisle 2 (Narrow Corridor)"
         elif robot.px < 1.0:
@@ -1155,7 +1357,11 @@ class LibraryDemoApp(object):
         return wx, wy
 
     def _render_current_frame(self):
-        """Draws the realistic academic library floor plan and all active dynamic elements."""
+        """Draws the realistic architectural floor plan and all active dynamic elements."""
+        if self.active_scenario == "hotelroomservice":
+            self._render_hotel_frame()
+            return
+
         img = np.full((self.canvas_height, self.canvas_width, 3), FLOOR_BASE, dtype=np.uint8)
 
         # 1. Warm Parquet Hardwood Flooring Texture
@@ -1786,6 +1992,284 @@ class LibraryDemoApp(object):
     # --------------------------------------------------------------------------
     # BENCHMARK RUNNER (20 SEEDS IN BACKGROUND THREAD)
     # --------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    # HOTEL SCENARIO RENDERING PIPELINE (Completely separate from Library)
+    # --------------------------------------------------------------------------
+    def _render_hotel_frame(self):
+        """Draws the luxury Grand Hotel corridor floor plan and dynamic elements."""
+        img = np.full((self.canvas_height, self.canvas_width, 3), (242, 245, 248), dtype=np.uint8)
+
+        # 1. Italian marble floor grout lines
+        for gx in range(0, self.canvas_width, 36):
+            cv2.line(img, (gx, 0), (gx, self.canvas_height), HOTEL_FLOOR_GROUT, 1)
+        for gy in range(0, self.canvas_height, 36):
+            cv2.line(img, (0, gy), (self.canvas_width, gy), HOTEL_FLOOR_GROUT, 1)
+
+        # 2. Central plush runner carpet
+        c_tl = self._w2px(-12.0, 2.7)
+        c_br = self._w2px(12.0, -2.7)
+        cv2.rectangle(img, (0, c_tl[1]), (self.canvas_width, c_br[1]), HOTEL_CARPET_BASE, -1)
+        cv2.line(img, (0, c_tl[1]), (self.canvas_width, c_tl[1]), HOTEL_BRASS_TRIM, 4)
+        cv2.line(img, (0, c_br[1]), (self.canvas_width, c_br[1]), HOTEL_BRASS_TRIM, 4)
+        cv2.line(img, (0, c_tl[1] + 6), (self.canvas_width, c_tl[1] + 6), (70, 210, 245), 1)
+        cv2.line(img, (0, c_br[1] - 6), (self.canvas_width, c_br[1] - 6), (70, 210, 245), 1)
+
+        mid_y = int((c_tl[1] + c_br[1]) / 2.0)
+        for dx in range(30, self.canvas_width, 60):
+            d_pts = np.array([[dx, mid_y - 8], [dx + 12, mid_y], [dx, mid_y + 8], [dx - 12, mid_y]], dtype=np.int32)
+            cv2.polylines(img, [d_pts], isClosed=True, color=HOTEL_CARPET_PATTERN, thickness=1)
+
+        # 3. Outer architectural perimeter walls
+        if self.cfg is not None:
+            outer_poly = np.array([self._w2px(pt[0], pt[1]) for pt in self.cfg.static_obstacles[0]], dtype=np.int32)
+            cv2.polylines(img, [outer_poly], isClosed=True, color=(20, 35, 60), thickness=6)
+
+        # 4. Obstacles
+        if self.cfg is not None:
+            for idx, poly in enumerate(self.cfg.static_obstacles[1:], start=1):
+                pts = np.array([self._w2px(pt[0], pt[1]) for pt in poly], dtype=np.int32)
+                x_min, x_max = np.min(pts[:, 0]), np.max(pts[:, 0])
+                y_min, y_max = np.min(pts[:, 1]), np.max(pts[:, 1])
+
+                if idx == 1:
+                    # Reception Desk
+                    cv2.fillPoly(img, [pts + np.array([4, 4], dtype=np.int32)], (180, 190, 200))
+                    cv2.fillPoly(img, [pts], HOTEL_RECEPTION_TOP)
+                    cv2.polylines(img, [pts], isClosed=True, color=HOTEL_BRASS_TRIM, thickness=2)
+                    b_px, b_py = self._w2px(-7.2, 4.8)
+                    cv2.circle(img, (b_px, b_py), 6, HOTEL_RECEPTION_BELL, -1)
+                    cv2.circle(img, (b_px, b_py), 7, (20, 120, 180), 1)
+                    cv2.line(img, (b_px, b_py - 6), (b_px, b_py - 9), (20, 120, 180), 2)
+                    m_px, m_py = self._w2px(-8.7, 4.8)
+                    cv2.rectangle(img, (m_px - 8, m_py - 5), (m_px + 8, m_py + 5), HOTEL_MONITOR_BEZEL, -1)
+                    cv2.rectangle(img, (m_px - 6, m_py - 4), (m_px + 6, m_py + 4), HOTEL_MONITOR_SCREEN, -1)
+                    bl_px, bl_py = self._w2px(-7.9, 4.8)
+                    cv2.rectangle(img, (bl_px - 6, bl_py - 4), (bl_px + 6, bl_py + 4), (40, 70, 120), -1)
+                    c_x = int(np.mean(pts[:, 0]))
+                    cv2.putText(img, "CONCIERGE & RECEPTION", (c_x - 72, y_min - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (30, 45, 80), 1, cv2.LINE_AA)
+
+                elif idx in [2, 3]:
+                    # Lobby Lounge Sofas
+                    is_left = (idx == 2)
+                    cv2.fillPoly(img, [pts + np.array([4, 4], dtype=np.int32)], (180, 190, 200))
+                    cv2.fillPoly(img, [pts], HOTEL_SOFA_SAPPHIRE)
+                    cv2.polylines(img, [pts], isClosed=True, color=HOTEL_SOFA_BORDER, thickness=2)
+                    mid_x = int((x_min + x_max) / 2)
+                    cv2.line(img, (mid_x, y_min), (mid_x, y_max), HOTEL_SOFA_BORDER, 1)
+                    if is_left:
+                        p_px, p_py = self._w2px(-7.0, -5.5)
+                        cv2.circle(img, (p_px, p_py), 8, HOTEL_PLANT_POT, -1)
+                        cv2.circle(img, (p_px, p_py), 6, HOTEL_PLANT_GREEN, -1)
+                    else:
+                        t_px, t_py = self._w2px(-2.85, -5.5)
+                        cv2.rectangle(img, (t_px - 8, t_py - 10), (t_px + 8, t_py + 10), HOTEL_COFFEE_TABLE, -1)
+                        cv2.rectangle(img, (t_px - 6, t_py - 8), (t_px + 6, t_py + 8), HOTEL_TABLE_GLASS, -1)
+                        cv2.circle(img, (t_px, t_py), 3, (180, 80, 220), -1)
+                        p_px, p_py = self._w2px(0.8, -5.5)
+                        cv2.circle(img, (p_px, p_py), 8, HOTEL_PLANT_POT, -1)
+                        cv2.circle(img, (p_px, p_py), 6, HOTEL_PLANT_GREEN, -1)
+                        cv2.putText(img, "EXECUTIVE LOUNGE", (t_px - 50, y_max + 16), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (30, 45, 80), 1, cv2.LINE_AA)
+
+                elif idx in HOTEL_SUITE_METADATA:
+                    suite_no, suite_type, is_north = HOTEL_SUITE_METADATA[idx]
+                    cv2.fillPoly(img, [pts + np.array([3, 3], dtype=np.int32)], (180, 190, 200))
+                    cv2.fillPoly(img, [pts], HOTEL_WALL_WOOD)
+                    cv2.polylines(img, [pts], isClosed=True, color=HOTEL_WALL_BORDER, thickness=2)
+                    door_w = 20
+                    door_cx = int((x_min + x_max) / 2)
+                    door_y1 = y_max - 8 if is_north else y_min
+                    door_y2 = y_max if is_north else y_min + 8
+                    cv2.rectangle(img, (door_cx - door_w // 2, door_y1), (door_cx + door_w // 2, door_y2), HOTEL_DOOR_MAHOGANY, -1)
+                    cv2.polylines(img, [np.array([
+                        [door_cx - door_w // 2, door_y1], [door_cx + door_w // 2, door_y1],
+                        [door_cx + door_w // 2, door_y2], [door_cx - door_w // 2, door_y2]
+                    ], dtype=np.int32)], isClosed=True, color=HOTEL_DOOR_BRASS, thickness=1)
+                    plaque_w, plaque_h = 56, 14
+                    plaque_x = door_cx - plaque_w // 2
+                    plaque_y = door_y1 - 10 if is_north else door_y2 + 2
+                    cv2.rectangle(img, (plaque_x, plaque_y), (plaque_x + plaque_w, plaque_y + plaque_h), HOTEL_PLAQUE_BG, -1)
+                    cv2.rectangle(img, (plaque_x, plaque_y), (plaque_x + plaque_w, plaque_y + plaque_h), HOTEL_PLAQUE_GOLD, 1)
+                    cv2.putText(img, suite_no, (plaque_x + 4, plaque_y + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.28, HOTEL_PLAQUE_GOLD, 1, cv2.LINE_AA)
+
+                elif idx == 10:
+                    # Housekeeping Depot
+                    cv2.fillPoly(img, [pts + np.array([3, 3], dtype=np.int32)], (180, 190, 200))
+                    cv2.fillPoly(img, [pts], (30, 48, 70))
+                    cv2.polylines(img, [pts], isClosed=True, color=(50, 80, 110), thickness=2)
+                    shelf_y = int((y_min + y_max) / 2)
+                    cv2.line(img, (x_min + 6, shelf_y), (x_max - 6, shelf_y), (100, 130, 160), 2)
+                    cv2.rectangle(img, (x_min + 10, shelf_y - 8), (x_min + 24, shelf_y - 2), HOTEL_TOWEL_WHITE, -1)
+                    cv2.rectangle(img, (x_min + 28, shelf_y - 8), (x_min + 42, shelf_y - 2), HOTEL_TOWEL_TEAL, -1)
+                    cv2.rectangle(img, (x_max - 28, shelf_y + 4), (x_max - 10, y_max - 4), HOTEL_HAMPER_COL, -1)
+                    c_x = int(np.mean(pts[:, 0]))
+                    cv2.putText(img, "HOUSEKEEPING & LINEN", (c_x - 55, y_min - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.30, (30, 60, 90), 1, cv2.LINE_AA)
+
+        # 5. A* Path Planning Visualization Overlay
+        if self.view_mode in ["PLANNING", "NAVIGATING"] and self.planner_data is not None:
+            self._draw_a_star_overlay(img)
+
+        # 6. Start & Goal Markers
+        if self.cfg is not None:
+            s_px, s_py = self._w2px(self.cfg.robot_start[0], self.cfg.robot_start[1])
+            cv2.rectangle(img, (s_px - 14, s_py - 18), (s_px + 14, s_py + 18), (170, 175, 180), -1)
+            cv2.line(img, (s_px, s_py - 18), (s_px, s_py + 18), (110, 115, 120), 2)
+            cv2.circle(img, (s_px, s_py), 14, (60, 180, 75), 2, cv2.LINE_AA)
+            cv2.circle(img, (s_px, s_py), 6, (60, 180, 75), -1, cv2.LINE_AA)
+            cv2.putText(img, "START: Pantry", (s_px - 45, s_py - 24), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (230, 255, 230), 1, cv2.LINE_AA)
+
+            target_goal = self.selected_goal if self.selected_goal is not None else self.cfg.robot_goal
+            g_px, g_py = self._w2px(target_goal[0], target_goal[1])
+            cv2.rectangle(img, (g_px - 12, g_py - 22), (g_px + 12, g_py + 22), HOTEL_DOOR_MAHOGANY, -1)
+            cv2.rectangle(img, (g_px - 12, g_py - 22), (g_px + 12, g_py + 22), HOTEL_DOOR_BRASS, 1)
+            cv2.circle(img, (g_px, g_py), 16, (0, 190, 250), 2, cv2.LINE_AA)
+            cv2.circle(img, (g_px, g_py), 8, HOTEL_ROBOT_CLOCHE, -1, cv2.LINE_AA)
+            cv2.circle(img, (g_px, g_py - 8), 2, HOTEL_ROBOT_HANDLE, -1, cv2.LINE_AA)
+            g_lbl = "GOAL: " + (self.selected_goal_label if self.selected_goal_label else "Suite 204")
+            cv2.putText(img, g_lbl, (g_px - 55, g_py - 26), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (70, 220, 255), 2, cv2.LINE_AA)
+
+        # 7. Visited Trajectory Trail
+        if len(self.trajectory) > 1:
+            for i in range(len(self.trajectory) - 1):
+                p1 = self._w2px(self.trajectory[i][0], self.trajectory[i][1])
+                p2 = self._w2px(self.trajectory[i + 1][0], self.trajectory[i + 1][1])
+                cv2.line(img, p1, p2, (30, 180, 245), 2, cv2.LINE_AA)
+
+        # 8. Dynamic Pedestrians with Hotel Roles
+        if self.env is not None and hasattr(self.env, "soadrl_sim"):
+            self._draw_hotel_pedestrians(img)
+
+        # 9. Hotel Room Service AMR Avatar
+        if self.env is not None and hasattr(self.env, "soadrl_sim"):
+            self._draw_hotel_robot(img)
+
+        # 10. Interactive Goal Selection Overlay
+        if self.is_selecting_goal:
+            cv2.rectangle(img, (20, 16), (580, 50), (25, 28, 36), -1)
+            cv2.rectangle(img, (20, 16), (580, 50), (0, 190, 255), 2)
+            cv2.putText(
+                img,
+                "[HOTEL SELECTION MODE] CLICK A REACHABLE CORRIDOR LOCATION FOR ROOM SERVICE",
+                (30, 38),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.34,
+                (0, 230, 255),
+                1,
+                cv2.LINE_AA
+            )
+            if self.mouse_hover_coords is not None:
+                hx_px, hy_px = self._w2px(self.mouse_hover_coords[0], self.mouse_hover_coords[1])
+                if 0 <= hx_px < self.canvas_width and 0 <= hy_px < self.canvas_height:
+                    cv2.circle(img, (hx_px, hy_px), 8, (0, 220, 255), 1, cv2.LINE_AA)
+                    cv2.drawMarker(img, (hx_px, hy_px), (0, 220, 255), cv2.MARKER_CROSS, 14, 1)
+
+        # 11. HUD Legend
+        self._draw_hotel_hud_legend(img)
+
+        # Render on Canvas
+        self._last_bgr_img = img.copy()
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(rgb_img)
+        self.canvas_photo = ImageTk.PhotoImage(image=pil_img)
+        self.canvas.create_image(0, 0, image=self.canvas_photo, anchor="nw")
+
+    def _draw_hotel_robot(self, img):
+        if self.env is None or not hasattr(self.env, "soadrl_sim"):
+            return
+        robot = self.env.soadrl_sim.robot
+        rx, ry = self._w2px(robot.px, robot.py)
+        rr = max(10, int(robot.radius * self.scale_px))
+        theta = robot.theta
+
+        cos_t = math.cos(theta)
+        sin_t = math.sin(theta)
+        nx = -sin_t
+        ny = cos_t
+        w1_x = int(rx + nx * (rr + 2))
+        w1_y = int(ry - ny * (rr + 2))
+        w2_x = int(rx - nx * (rr + 2))
+        w2_y = int(ry + ny * (rr + 2))
+        cv2.circle(img, (w1_x, w1_y), 3, (30, 30, 30), -1)
+        cv2.circle(img, (w2_x, w2_y), 3, (30, 30, 30), -1)
+
+        cv2.circle(img, (rx, ry), rr, HOTEL_ROBOT_SILVER, -1)
+        cv2.circle(img, (rx, ry), rr, (140, 145, 150), 2)
+
+        cloche_r = max(5, int(rr * 0.55))
+        cv2.circle(img, (rx, ry), cloche_r, HOTEL_ROBOT_CLOCHE, -1)
+        cv2.circle(img, (rx, ry), cloche_r, (160, 165, 170), 1)
+        cv2.circle(img, (rx, ry), 2, HOTEL_ROBOT_HANDLE, -1)
+
+        head_x = int(rx + cos_t * (rr - 2))
+        head_y = int(ry - sin_t * (rr - 2))
+        cv2.circle(img, (head_x, head_y), 3, HOTEL_ROBOT_AMBER, -1)
+
+        ray_x = int(rx + cos_t * (rr + 12))
+        ray_y = int(ry - sin_t * (rr + 12))
+        cv2.line(img, (rx, ry), (ray_x, ray_y), (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(img, "AMR: Service", (rx - 36, ry - rr - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.34, (255, 255, 255), 1, cv2.LINE_AA)
+
+    def _draw_hotel_pedestrians(self, img):
+        if self.env is None or not hasattr(self.env, "soadrl_sim"):
+            return
+        sim = self.env.soadrl_sim
+        for i, h in enumerate(sim.humans):
+            hx, hy = self._w2px(h.px, h.py)
+            hr = max(6, int(h.radius * self.scale_px))
+            speed = math.hypot(h.vx, h.vy)
+
+            role = 'pedestrian_guest'
+            if self.cfg and hasattr(self.cfg, 'base_humans') and i < len(self.cfg.base_humans):
+                role = self.cfg.base_humans[i].get('role', 'pedestrian_guest')
+
+            if role == 'pedestrian_housekeeping':
+                cv2.circle(img, (hx, hy), hr, ROLE_HOUSEKEEPING, -1)
+                cv2.circle(img, (hx, hy), hr, (20, 90, 50), 1)
+                if speed > 0.05:
+                    dir_x = h.vx / speed
+                    dir_y = -h.vy / speed
+                else:
+                    dir_x, dir_y = 1.0, 0.0
+                cart_cx = int(hx + dir_x * (hr + 12))
+                cart_cy = int(hy + dir_y * (hr + 12))
+                cart_w, cart_h = 16, 14
+                cv2.rectangle(img, (cart_cx - cart_w // 2, cart_cy - cart_h // 2),
+                              (cart_cx + cart_w // 2, cart_cy + cart_h // 2), ROLE_LINEN_CART, -1)
+                cv2.rectangle(img, (cart_cx - 6, cart_cy - 4), (cart_cx - 1, cart_cy + 4), HOTEL_TOWEL_WHITE, -1)
+                cv2.putText(img, "Housekeeping", (hx - 36, hy - hr - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.30, (255, 255, 255), 1, cv2.LINE_AA)
+            else:
+                cv2.circle(img, (hx, hy), hr, ROLE_GUEST, -1)
+                cv2.circle(img, (hx, hy), hr, (20, 60, 100), 1)
+                if speed > 0.05:
+                    dir_x = -h.vx / speed
+                    dir_y = h.vy / speed
+                else:
+                    dir_x, dir_y = -1.0, 0.0
+                sc_cx = int(hx + dir_x * (hr + 10))
+                sc_cy = int(hy + dir_y * (hr + 10))
+                cv2.rectangle(img, (sc_cx - 5, sc_cy - 4), (sc_cx + 5, sc_cy + 4), ROLE_SUITCASE, -1)
+                cv2.line(img, (sc_cx, sc_cy), (hx, hy), (50, 50, 50), 1)
+                cv2.putText(img, "Guest", (hx - 14, hy - hr - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.30, (255, 255, 255), 1, cv2.LINE_AA)
+
+            if speed > 0.05:
+                v_end_x = int(hx + h.vx * self.scale_px * 0.4)
+                v_end_y = int(hy - h.vy * self.scale_px * 0.4)
+                cv2.arrowedLine(img, (hx, hy), (v_end_x, v_end_y), (255, 255, 255), 1, tipLength=0.3)
+
+    def _draw_hotel_hud_legend(self, img):
+        cv2.rectangle(img, (20, self.canvas_height - 38), (560, self.canvas_height - 12), (25, 28, 34), -1)
+        cv2.rectangle(img, (20, self.canvas_height - 38), (560, self.canvas_height - 12), (50, 55, 65), 1)
+        cv2.circle(img, (32, self.canvas_height - 25), 6, HOTEL_ROBOT_SILVER, -1)
+        cv2.circle(img, (32, self.canvas_height - 25), 3, HOTEL_ROBOT_CLOCHE, -1)
+        cv2.putText(img, "AMR Cloche (0.6m)", (44, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (220, 225, 230), 1)
+        cv2.circle(img, (155, self.canvas_height - 25), 6, ROLE_GUEST, -1)
+        cv2.putText(img, "Guest + Luggage", (167, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (220, 225, 230), 1)
+        cv2.circle(img, (275, self.canvas_height - 25), 6, ROLE_HOUSEKEEPING, -1)
+        cv2.putText(img, "Housekeeping + Cart", (287, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (220, 225, 230), 1)
+        cv2.rectangle(img, (415, self.canvas_height - 29), (427, self.canvas_height - 21), HOTEL_WALL_WOOD, -1)
+        cv2.putText(img, "Suites", (433, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (220, 225, 230), 1)
+        cv2.line(img, (485, self.canvas_height - 25), (505, self.canvas_height - 25), (40, 210, 80), 2)
+        cv2.putText(img, "A* Route", (512, self.canvas_height - 21), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (220, 225, 230), 1)
+
     def on_run_benchmark_pressed(self):
         """Starts the 20-seed benchmark runner thread."""
         if self.is_benchmark_running:
@@ -1892,8 +2376,14 @@ class LibraryDemoApp(object):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="SVNIT CS359 Dual Scenario Autonomous Robot Navigation GUI")
+    parser.add_argument("--scenario", type=str, default="library", choices=["library", "hotelroomservice"],
+                        help="Scenario to launch: 'library' or 'hotelroomservice'")
+    args, _ = parser.parse_known_args()
+
     root = tk.Tk()
-    app = LibraryDemoApp(root)
+    app = LibraryDemoApp(root, default_scenario=args.scenario)
     root.mainloop()
 
 
