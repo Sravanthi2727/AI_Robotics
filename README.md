@@ -18,11 +18,11 @@ B.Tech. Computer Science & Engineering, IIIrd Year (Academic Year 2026–2027)
 
 Our team designed, benchmarked, and recorded four distinct, application-oriented service robotics scenarios extending ETH Zürich's NavRep simulation platform. Click any image or title below to jump directly to its complete architectural specification:
 
-| [1. Library Book Collection Robot](#81-scenario-1-institutional-library-book-collection-robot--shriya) | [2. Hospital Medicine Delivery Robot](#82-scenario-2-medirunner-hospital-medicine-delivery-robot--shreya) |
+| [1. Library Book Collection Robot](#81-scenario-1-institutional-library-book-collection-robot-shriya) | [2. Hospital Medicine Delivery Robot](#82-scenario-2-medirunner-hospital-medicine-delivery-robot-shreya) |
 | :---: | :---: |
 | [![Library Book Collection Robot](docs/images/library_book_collection.png)](docs/images/library_book_collection.png) | [![Hospital Medicine Delivery Robot](docs/images/hospital_medicine_delivery.png)](docs/images/hospital_medicine_delivery.png) |
 | **Lead:** Shriya Siddesh <br> *Narrow $1.8\text{ m}$ stack aisles, reading halls, study tables, global $A^*$ search & predictive TCA yielding.* | **Lead:** Shreya <br> *Clinical hallways, triage bottleneck, recessed patient alcoves & emergency gurney yielding ($1.65\text{ m/s}$).* |
-| [3. Hotel Room Service Delivery Robot](#83-scenario-3-grand-hotel-room-service-delivery-robot--tanishka) | [4. Airport Passenger Assistance Robot](#84-scenario-4-airport-passenger-assistance-robot--ritu--sravanthi) |
+| [3. Hotel Room Service Delivery Robot](#83-scenario-3-grand-hotel-room-service-delivery-robot-tanishka) | [4. Airport Passenger Assistance Robot](#84-scenario-4-airport-passenger-assistance-robot-ritu-and-sravanthi) |
 | [![Hotel Room Service Delivery Robot](docs/images/hotel_room_service.png)](docs/images/hotel_room_service.png) | [![Airport Passenger Assistance Robot](docs/images/airport_passenger_assistance.png)](docs/images/airport_passenger_assistance.png) |
 | **Lead:** Tanishka Kumthekar <br> *Luxury executive suites, marble foyers, cloche delivery AMR, rolling luggage & housekeeping carts.* | **Leads:** Ritu & Sravanthi <br> *Terminal concourse, ticketing islands, TSA security lanes to Gate 12 with mission-control telemetry.* |
 
@@ -38,10 +38,10 @@ Our team designed, benchmarked, and recorded four distinct, application-oriented
 6. [Task 2: Testing Existing NavRep Scenarios](#6-task-2-testing-existing-navrep-scenarios)
 7. [Complete Task 2 22-Video Index](#7-complete-task-2-22-video-index)
 8. [Task 3: Custom Robotics Navigation Scenarios](#8-task-3-custom-robotics-navigation-scenarios)
-   - [8.1 Scenario 1: Institutional Library Book Collection Robot (Shriya)](#81-scenario-1-institutional-library-book-collection-robot--shriya)
-   - [8.2 Scenario 2: MediRunner Hospital Medicine Delivery Robot (Shreya)](#82-scenario-2-medirunner-hospital-medicine-delivery-robot--shreya)
-   - [8.3 Scenario 3: Grand Hotel Room Service Delivery Robot (Tanishka)](#83-scenario-3-grand-hotel-room-service-delivery-robot--tanishka)
-   - [8.4 Scenario 4: Airport Passenger Assistance Robot (Ritu & Sravanthi)](#84-scenario-4-airport-passenger-assistance-robot--ritu--sravanthi)
+   - [8.1 Scenario 1: Institutional Library Book Collection Robot (Shriya)](#81-scenario-1-institutional-library-book-collection-robot-shriya)
+   - [8.2 Scenario 2: MediRunner Hospital Medicine Delivery Robot (Shreya)](#82-scenario-2-medirunner-hospital-medicine-delivery-robot-shreya)
+   - [8.3 Scenario 3: Grand Hotel Room Service Delivery Robot (Tanishka)](#83-scenario-3-grand-hotel-room-service-delivery-robot-tanishka)
+   - [8.4 Scenario 4: Airport Passenger Assistance Robot (Ritu and Sravanthi)](#84-scenario-4-airport-passenger-assistance-robot-ritu-and-sravanthi)
 9. [Task 3: Live Multi-Scenario Graphical Interface (VNC & Web Browser)](#9-task-3-live-multi-scenario-graphical-interface-vnc--web-browser)
 10. [Technical Implementation & Modifications Summary](#10-technical-implementation--modifications-summary)
 11. [Repository Directory Structure](#11-repository-directory-structure)
@@ -55,14 +55,14 @@ Our team designed, benchmarked, and recorded four distinct, application-oriented
 
 Each team member took ownership of distinct architectural milestones across Tasks 1, 2, and 3:
 
-| Team Member | Official Project Responsibilities | Key Deliverables & Artifacts |
-| :--- | :--- | :--- |
-| **Sravanthi** | **Task 1 Lead & Task 2 Lead:** Containerization architecture, Ubuntu runtime environment setup, dependency pin verification, execution and recording of all 11 existing ETH Zürich NavRep scenarios across 22 benchmark videos. <br>**Task 3 Co-Lead:** Airport Passenger Assistance Robot design, benchmarking, and dashboard UI generation. | `Dockerfile`, `docker-compose.yml`, `scripts_custom/smoke_test.py`, `scripts_custom/verify_videos.py`, `scripts_custom/remediate_and_record.py`, 22 Task 2 MP4 videos, `submission/README_TASK1.md`, `submission/README_TASK2.md`, `airport_metrics.csv`. |
-| **Sona** | **Documentation Lead & Submission Coordinator:** Authored master project README, technical reports, organized scenario descriptions and visual assets, structured cross-platform PowerShell execution guides, unified scenario benchmarks, and coordinated final package integrity. | Root `README.md`, `submission/commands.md`, `docs/SCENARIO_INVENTORY.md`, `docs/CHALLENGES_LOG.md`, scenario documentation synthesis, submission deliverable validation. |
-| **Shriya** | **Task 3 Lead (Library Scenario):** Designed and implemented the primary **Library Book Collection Robot** scenario, formulated the hybrid Global $A^*$ path planning framework with $0.48\text{ m}$ safety margin, implemented Time-to-Closest-Approach (TCA) predictive pedestrian yielding, created the interactive Tkinter multi-scenario live GUI with dynamic replanning, and authored the 56-test verification suite. | `navrep_custom/library_book_collection.py`, `navrep_custom/library_planner.py`, `navrep_custom/library_gui.py`, `tests/test_library_scenario.py`, `tests/test_custom_scenarios.py`, `submission/COMPLETE_PROJECT_RUN_AND_EVALUATION_GUIDE.md`. |
-| **Shreya** | **Task 3 Lead (Hospital Scenario):** Designed and implemented the **MediRunner Hospital Medicine Delivery Robot** scenario, modeled the clinical hallway layout with triage desk bottlenecks, engineered the Emergency Gurney CPA right-of-way yielding state machine with safe alcove pull-ins, and generated hospital benchmark recordings. | `navrep_custom/hospital_delivery.py`, `scripts_custom/record_hospital_demo.py`, `tests/test_hospital_controller.py`, `submission/task3_custom/videos/hospital_*.mp4`, `submission/task3_custom/SCENARIO_DESCRIPTIONS.md`. |
-| **Tanishka** | **Task 3 Lead (Hotel Scenario):** Designed and implemented the **Grand Hotel Room Service Delivery Robot** scenario, modeled luxury corridor floorplans with executive suites, concierges, and lounges, engineered dynamic collision avoidance against guests with luggage and housekeeping carts, and recorded multi-tier hotel demos. | `navrep_custom/hotel_room_service.py`, `scripts_custom/record_hotel_demo.py`, `scripts_custom/test_hotel_gui_rendering.py`, `submission/task3_custom/videos/hotelroomservice_*.mp4`. |
-| **Ritu** | **Task 3 Lead (Airport Scenario):** Designed and implemented the **Airport Passenger Assistance Robot** scenario, modeled the terminal concourse layout from check-in to Gate 12, engineered the mission-control dashboard telemetry UI, implemented dynamic "Boarding Call" crowd events, and collected 20-seed empirical benchmarks (co-developed with Sravanthi). | `navrep_custom/airport_passenger_assistance.py`, `navrep_custom/airport_dashboard_renderer.py`, `scripts_custom/record_airport_dashboard.py`, `scripts_custom/benchmark_airport.py`, `submission/task3_custom/AIRPORT_PASSENGER_ASSISTANCE.md`. |
+| Member | Responsibility | Key Deliverables & Artifacts |
+|---|---|---|
+| **Sravanthi** | **Task 1:** Repository setup and execution. <br>**Task 2:** Running, testing and recording the existing NavRep simulation scenarios. <br>**Task 3:** Airport Passenger Assistance Robot – custom scenario design and implementation (co-developed with Ritu). | `Dockerfile`, `docker-compose.yml`, `scripts_custom/smoke_test.py`, `scripts_custom/verify_videos.py`, `scripts_custom/remediate_and_record.py`, 22 Task 2 MP4 videos, `submission/README_TASK1.md`, `submission/README_TASK2.md`. |
+| **Sona** | Overall project README, technical documentation, organizing scenario information and screenshots, documenting project setup and execution, and coordinating the final documentation and submission. | Root `README.md`, `submission/commands.md`, `docs/SCENARIO_INVENTORY.md`, `docs/CHALLENGES_LOG.md`, scenario documentation synthesis, submission deliverable validation. |
+| **Shriya** | Task 3: Library Book Collection Robot – custom scenario design and implementation. | `navrep_custom/library_book_collection.py`, `navrep_custom/library_planner.py`, `navrep_custom/library_gui.py`, `tests/test_library_scenario.py`, `tests/test_custom_scenarios.py`, `submission/COMPLETE_PROJECT_RUN_AND_EVALUATION_GUIDE.md`. |
+| **Shreya** | Task 3: Hospital Medicine Delivery Robot – custom scenario design and implementation. | `navrep_custom/hospital_delivery.py`, `scripts_custom/record_hospital_demo.py`, `tests/test_hospital_controller.py`, `submission/task3_custom/videos/hospital_*.mp4`, `submission/task3_custom/SCENARIO_DESCRIPTIONS.md`. |
+| **Tanishka** | Task 3: Hotel Room Service Delivery Robot – custom scenario design and implementation. | `navrep_custom/hotel_room_service.py`, `scripts_custom/record_hotel_demo.py`, `scripts_custom/test_hotel_gui_rendering.py`, `submission/task3_custom/videos/hotelroomservice_*.mp4`. |
+| **Ritu** | Task 3: Airport Passenger Assistance Robot – custom scenario design and implementation (co-developed with Sravanthi). | `navrep_custom/airport_passenger_assistance.py`, `navrep_custom/airport_dashboard_renderer.py`, `scripts_custom/record_airport_dashboard.py`, `scripts_custom/benchmark_airport.py`, `submission/task3_custom/AIRPORT_PASSENGER_ASSISTANCE.md`. |
 
 ---
 
@@ -312,7 +312,7 @@ All 22 MP4 video files reside in `submission/task2_videos/` and were validated u
 
 ## 8. Task 3: Custom Robotics Navigation Scenarios
 
-### 8.1 Scenario 1: Institutional Library Book Collection Robot — Shriya
+### 8.1 Scenario 1: Institutional Library Book Collection Robot (Shriya)
 
 ![Library Book Collection Robot](docs/images/library_book_collection.png)
 *Figure 8.1: Live Tkinter GUI demonstration of the Institutional Library Book Collection scenario showing parquet flooring, book stacks A1–A3, reading tables, and $A^*$ route.*
@@ -349,7 +349,7 @@ All 22 MP4 video files reside in `submission/task2_videos/` and were validated u
 
 ---
 
-### 8.2 Scenario 2: MediRunner Hospital Medicine Delivery Robot — Shreya
+### 8.2 Scenario 2: MediRunner Hospital Medicine Delivery Robot (Shreya)
 
 ![Hospital Medicine Delivery Robot](docs/images/hospital_medicine_delivery.png)
 *Figure 8.2: MediRunner Hospital Delivery scenario showing antiseptic clinical porcelain floorplan, triage desk with live ECG monitors, and high-speed emergency gurney hazard.*
@@ -378,7 +378,7 @@ All 22 MP4 video files reside in `submission/task2_videos/` and were validated u
 
 ---
 
-### 8.3 Scenario 3: Grand Hotel Room Service Delivery Robot — Tanishka
+### 8.3 Scenario 3: Grand Hotel Room Service Delivery Robot (Tanishka)
 
 ![Hotel Room Service Robot](docs/images/hotel_room_service.png)
 *Figure 8.3: Grand Hotel Room Service Delivery scenario showing sapphire lounge, executive guest suites, concierge station, and cloche AMR delivering to Suite 204.*
@@ -403,10 +403,13 @@ All 22 MP4 video files reside in `submission/task2_videos/` and were validated u
 
 ---
 
-### 8.4 Scenario 4: Airport Passenger Assistance Robot — Ritu & Sravanthi
+### 8.4 Scenario 4: Airport Passenger Assistance Robot (Ritu and Sravanthi)
 
 ![Airport Passenger Assistance Robot](docs/images/airport_passenger_assistance.png)
 *Figure 8.4: Airport Passenger Assistance scenario mission-control dashboard showing terminal concourse, security checkpoint, and 100% benchmark success at Gate 12.*
+
+> [!NOTE]
+> **Benchmark Metric Evaluation Scope:** The benchmark statistics shown on the mission-control dashboard screenshot (100% Success, 0% Collision, 0% Timeout) refer specifically to the evaluated **EASY** difficulty trial run. As documented below, benchmark performance varies under higher crowd density and dynamic "Boarding Call" events (50% on Medium, 15% on Hard), and these Easy-tier metrics should not be generalized to all scenarios or difficulty tiers.
 
 * **Lead Authors:** Ritu & Sravanthi
 * **Real-World Application & Motivation:** Airport concierge robots assist elderly and reduced-mobility passengers carrying luggage from the main terminal entrance through security checkpoints and busy concourses to their departure gate.
